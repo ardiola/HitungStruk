@@ -1,0 +1,1407 @@
+<!doctype html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Struk Tagihan</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+                color: #333;
+                line-height: 1.6;
+                padding: 20px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .container {
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            }
+
+            h1 {
+                text-align: center;
+                color: #2c3e50;
+                margin-bottom: 30px;
+            }
+
+            .input-section {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .input-group {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .input-group label {
+                margin-bottom: 5px;
+                font-weight: bold;
+                color: #2c3e50;
+            }
+
+            .input-group input {
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 16px;
+            }
+
+            .input-group input:focus {
+                outline: none;
+                border-color: #3498db;
+            }
+
+            button {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.3s;
+            }
+
+            button:hover {
+                background-color: #2980b9;
+            }
+
+            .btn-add {
+                grid-column: 1 / -1;
+            }
+
+            .btn-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 20px;
+                justify-content: center;
+            }
+
+            .btn-print {
+                background-color: #27ae60;
+            }
+
+            .btn-print:hover {
+                background-color: #219a52;
+            }
+
+            .btn-reset {
+                background-color: #e74c3c;
+            }
+
+            .btn-reset:hover {
+                background-color: #c0392b;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+
+            th,
+            td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            th {
+                background-color: #ecf0f1;
+                font-weight: bold;
+                color: #2c3e50;
+            }
+
+            tr:hover {
+                background-color: #f8f9fa;
+            }
+
+            .actions-btn {
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+
+            .actions-btn:hover {
+                background-color: #c0392b;
+            }
+
+            .summary-input {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .summary-input span {
+                flex: 1;
+                font-weight: bold;
+                color: #2c3e50;
+            }
+
+            .summary-input .input-wrapper {
+                position: relative;
+                flex: 1;
+            }
+
+            .summary-input input {
+                width: 100%;
+                padding: 10px 12px;
+                border: 2px solid #ddd;
+                border-radius: 6px;
+                font-size: 15px;
+                text-align: right;
+                transition:
+                    border-color 0.3s,
+                    box-shadow 0.3s;
+                background-color: #fff;
+                -moz-appearance: textfield;
+            }
+
+            .summary-input input::-webkit-outer-spin-button,
+            .summary-input input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .summary-input input:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+
+            .summary-dual-input {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .summary-dual-input .label-container {
+                flex: 0 0 80px;
+            }
+
+            .summary-dual-input .label-container span {
+                display: block;
+                font-weight: bold;
+                color: #2c3e50;
+                font-size: 14px;
+            }
+
+            .summary-dual-input .inputs-container {
+                flex: 1;
+                display: flex;
+                gap: 10px;
+            }
+
+            .summary-dual-input .input-group-sm {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .summary-dual-input .input-group-sm input {
+                flex: 1;
+                padding: 8px 10px;
+                border: 2px solid #ddd;
+                border-radius: 4px;
+                font-size: 14px;
+                text-align: right;
+                transition:
+                    border-color 0.3s,
+                    box-shadow 0.3s;
+                background-color: #fff;
+                -moz-appearance: textfield;
+            }
+
+            .summary-dual-input .input-group-sm input:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+            }
+
+            .summary-dual-input
+                .input-group-sm
+                input::-webkit-outer-spin-button,
+            .summary-dual-input
+                .input-group-sm
+                input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .summary-dual-input .input-group-sm .unit {
+                font-size: 12px;
+                color: #7f8c8d;
+                min-width: 30px;
+                text-align: left;
+            }
+
+            .summary-input input:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+
+            .summary-input-wide {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .summary-input-wide span {
+                flex: 0 0 70px;
+                font-weight: bold;
+                color: #2c3e50;
+            }
+
+            .summary-input-wide .input-wrapper {
+                position: relative;
+                flex: 1;
+            }
+
+            .summary-input-wide input {
+                width: 100%;
+                padding: 10px 40px 10px 12px;
+                border: 2px solid #ddd;
+                border-radius: 6px;
+                font-size: 15px;
+                text-align: right;
+                transition:
+                    border-color 0.3s,
+                    box-shadow 0.3s;
+                background-color: #fff;
+                -moz-appearance: textfield;
+            }
+
+            .summary-input-wide input::-webkit-outer-spin-button,
+            .summary-input-wide input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .summary-input-wide input:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+
+            .summary-input-wide .unit {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #7f8c8d;
+                font-size: 14px;
+                pointer-events: none;
+            }
+
+            .summary-input-wide input[type="text"] {
+                padding: 10px 40px 10px 12px;
+            }
+
+            .person-inputs-wrapper {
+                margin: 25px 0;
+                padding: 20px;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 10px;
+                border-left: 4px solid #3498db;
+            }
+
+            .person-inputs-title {
+                margin: 0 0 15px 0;
+                color: #2c3e50;
+                font-size: 1.1em;
+            }
+
+            .person-input-card {
+                background: white;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 15px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                border: 1px solid #dee2e6;
+            }
+
+            .person-input-header {
+                margin-bottom: 12px;
+            }
+
+            .person-badge {
+                display: inline-block;
+                background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+                color: white;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 0.9em;
+            }
+
+            .person-input-fields {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr auto;
+                gap: 10px;
+                align-items: end;
+            }
+
+            .input-group-sm {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .input-group-sm label {
+                font-size: 0.85em;
+                font-weight: bold;
+                color: #495057;
+            }
+
+            .input-group-sm input {
+                padding: 8px 10px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+
+            .input-group-sm input:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            }
+
+            .btn-add-person {
+                background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+            }
+
+            .btn-add-person-full {
+                background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+                width: 100%;
+                margin-top: 10px;
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+            }
+
+            .btn-add-person-full:hover,
+            .btn-add-person-full:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            }
+
+            .person-bills-section {
+                margin-bottom: 20px;
+                padding: 15px;
+                background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                border-radius: 8px;
+            }
+
+            .person-bills-title {
+                margin: 0 0 10px 0;
+                color: #2c3e50;
+                font-size: 1em;
+            }
+
+            .person-bill-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid #bbdefb;
+                font-weight: bold;
+                color: #1b5e20;
+            }
+
+            .person-bill-row:last-child {
+                border-bottom: none;
+            }
+
+            .person-bill-row span:first-child {
+                color: #2c3e50;
+            }
+
+            .person-bill-row span:last-child {
+                color: #1b5e20;
+            }
+
+            @media (max-width: 768px) {
+                .person-input-fields {
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                }
+            }
+
+            .summary-row-display {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                font-weight: bold;
+                padding: 8px 0;
+            }
+
+            .summary-row-display span:first-child {
+                color: #2c3e50;
+            }
+
+            .summary-row-display span:last-child {
+                color: #27ae60;
+                font-weight: bold;
+            }
+
+            .summary {
+                margin-top: 30px;
+                padding: 20px;
+                background: linear-gradient(135deg, #ecf0f1 0%, #dce3e8 100%);
+                border-radius: 5px;
+            }
+
+            .summary-total {
+                font-size: 1.2em;
+                color: #27ae60;
+                border-top: 2px solid #bdc3c7;
+                padding-top: 10px;
+                margin-top: 15px;
+            }
+
+            .format-info {
+                font-size: 0.9em;
+                color: #7f8c8d;
+                margin-top: 10px;
+                text-align: center;
+            }
+
+            @media (max-width: 600px) {
+                .input-section {
+                    grid-template-columns: 1fr;
+                }
+
+                .btn-actions {
+                    flex-direction: column;
+                }
+            }
+
+            @media print {
+                body {
+                    background: white;
+                    padding: 0;
+                }
+
+                .container {
+                    box-shadow: none;
+                    padding: 10px;
+                    max-width: 100%;
+                }
+
+                h1,
+                .input-section,
+                .person-inputs-wrapper,
+                .btn-actions,
+                .format-info,
+                .summary-input-wide,
+                .summary-input-wide > .input-wrapper,
+                .summary-input,
+                .summary-input > .input-wrapper {
+                    display: none !important;
+                }
+
+                #itemsTable,
+                .summary,
+                .person-bills-section {
+                    display: block !important;
+                }
+
+                #itemsTable {
+                    width: 100% !important;
+                    margin-top: 20px;
+                }
+
+                #itemsTable th,
+                #itemsTable td {
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                }
+
+                #itemsTable th {
+                    background-color: #f5f5f5;
+                    font-weight: bold;
+                }
+
+                #itemsTable td:last-child,
+                #itemsTable th:last-child {
+                    display: none !important;
+                }
+
+                .summary-total {
+                    font-size: 1.2em;
+                    color: #27ae60;
+                    border-top: 2px solid #bdc3c7;
+                    padding-top: 10px;
+                    margin-top: 15px;
+                }
+
+                .summary-row-display {
+                    display: flex !important;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                    font-weight: bold;
+                    padding: 8px 0;
+                }
+
+                .person-bills-section {
+                    margin-top: 20px;
+                    padding: 15px;
+                    background: white;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                }
+
+                .person-bills-title {
+                    font-size: 1.3em;
+                    margin-bottom: 15px;
+                    text-align: center;
+                    color: #333;
+                }
+
+                .person-bill-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 10px 0;
+                    border-bottom: 1px solid #eee;
+                    font-size: 1.1em;
+                }
+
+                .person-bill-row:last-child {
+                    border-bottom: none;
+                }
+
+                .person-bill-row span:first-child {
+                    font-weight: bold;
+                    color: #333;
+                }
+
+                .person-bill-row span:last-child {
+                    font-weight: bold;
+                    color: #27ae60;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Struk Tagihan</h1>
+
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="itemName">Nama Barang:</label>
+                    <input
+                        type="text"
+                        id="itemName"
+                        placeholder="Nama barang"
+                    />
+                </div>
+
+                <div class="input-group">
+                    <label for="itemPrice">Harga Satuan:</label>
+                    <input
+                        type="text"
+                        id="itemPrice"
+                        placeholder="Harga"
+                        oninput="formatRupiah(this)"
+                    />
+                </div>
+
+                <div class="input-group">
+                    <label for="itemQuantity">Jumlah:</label>
+                    <input
+                        type="number"
+                        id="itemQuantity"
+                        placeholder="Qty"
+                        min="1"
+                        value="1"
+                    />
+                </div>
+
+                <button class="btn-add" onclick="addItem()">Tambah Item</button>
+            </div>
+
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="taxName">Nama Pajak:</label>
+                    <input type="text" id="taxName" placeholder="Nama pajak" />
+                </div>
+
+                <div class="input-group">
+                    <label for="taxPrice">Tarif Pajak (Rp):</label>
+                    <input
+                        type="text"
+                        id="taxPrice"
+                        placeholder="Tarif"
+                        oninput="formatRupiah(this)"
+                    />
+                </div>
+
+                <div class="input-group">
+                    <label for="taxQuantity">Jumlah:</label>
+                    <input
+                        type="number"
+                        id="taxQuantity"
+                        placeholder="Qty"
+                        min="1"
+                        value="1"
+                    />
+                </div>
+
+                <button class="btn-add" onclick="addTax()">Tambah Pajak</button>
+            </div>
+
+            <div id="personInputsContainer">
+                <!-- Person-specific input sections will be generated here when splitCount > 1 -->
+            </div>
+
+            <table id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Nama Barang</th>
+                        <th>Harga Satuan</th>
+                        <th>Jumlah</th>
+                        <th>Subtotal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Items will be added here dynamically -->
+                </tbody>
+            </table>
+
+            <div class="btn-actions">
+                <button class="btn-print" onclick="window.print()">
+                    Cetak
+                </button>
+                <button class="btn-reset" onclick="resetAll()">Reset</button>
+            </div>
+
+            <div class="summary">
+                <div class="summary-input-wide">
+                    <span>Diskon:</span>
+                    <div class="input-wrapper">
+                        <input
+                            type="number"
+                            id="discountPercent"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            onchange="calculateTotal()"
+                            value="0"
+                            onclick="
+                                if (this.value === '0') {
+                                    this.value = '';
+                                }
+                            "
+                            onblur="
+                                if (this.value === '') {
+                                    this.value = '0';
+                                }
+                            "
+                        />
+                        <span class="unit">%</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input
+                            type="text"
+                            id="discountAmountInput"
+                            placeholder="0"
+                            oninput="
+                                formatRupiah(this);
+                                calculateTotal();
+                            "
+                        />
+                        <span class="unit">Rp</span>
+                    </div>
+                </div>
+                <div class="summary-input-wide" style="display: none">
+                    <span>Pajak:</span>
+                    <div class="input-wrapper">
+                        <input
+                            type="number"
+                            id="taxPercent"
+                            placeholder="0"
+                            min="0"
+                            onchange="calculateTotal()"
+                            value="0"
+                            onclick="
+                                if (this.value === '0') {
+                                    this.value = '';
+                                }
+                            "
+                            onblur="
+                                if (this.value === '') {
+                                    this.value = '0';
+                                }
+                            "
+                        />
+                        <span class="unit">%</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input
+                            type="text"
+                            id="taxAmountInput"
+                            placeholder="0"
+                            oninput="
+                                formatRupiah(this);
+                                calculateTotal();
+                            "
+                        />
+                        <span class="unit">Rp</span>
+                    </div>
+                </div>
+                <div class="summary-input">
+                    <span>Jumlah Orang:</span>
+                    <div class="input-wrapper">
+                        <input
+                            type="number"
+                            id="splitCount"
+                            placeholder="1"
+                            min="1"
+                            value="1"
+                            onchange="calculateTotal()"
+                            onclick="
+                                if (this.value === '1') {
+                                    this.value = '';
+                                }
+                            "
+                            onblur="
+                                if (this.value === '') {
+                                    this.value = '1';
+                                }
+                            "
+                        />
+                    </div>
+                </div>
+                <div class="summary-row-display">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">Rp 0</span>
+                </div>
+                <div class="summary-row-display">
+                    <span>Diskon:</span>
+                    <span id="discountAmount">Rp 0</span>
+                </div>
+                <div class="summary-row-display">
+                    <span>Pajak:</span>
+                    <span id="taxAmount">Rp 0</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total Akhir:</span>
+                    <span id="total">Rp 0</span>
+                </div>
+            </div>
+
+            <div class="format-info">
+                Format angka menggunakan titik sebagai pemisah ribuan (contoh:
+                Rp 10.000)
+            </div>
+        </div>
+
+        <script>
+            // Array to store items
+            let items = [];
+
+            // Format number with thousand separator using dot
+            function formatNumber(number) {
+                return new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                })
+                    .format(number)
+                    .replace("IDR", "")
+                    .trim();
+            }
+
+            // Format input as Rupiah (with thousand separator using dot)
+            function formatRupiah(input) {
+                // Remove all non-digit characters except comma and dot
+                let value = input.value.replace(/[^\d]/g, "");
+
+                // If empty, set to 0
+                if (value === "") {
+                    input.value = "";
+                    return;
+                }
+
+                // Format with thousand separator using dot
+                const numberValue = parseInt(value, 10);
+                if (isNaN(numberValue)) {
+                    input.value = "";
+                    return;
+                }
+
+                // Format as Indonesian Rupiah
+                input.value = numberValue.toLocaleString("id-ID");
+            }
+
+            // Parse formatted number back to actual number
+            function parseFormattedNumber(formatted) {
+                return parseFloat(formatted.replace(/[^\d,-]/g, "")) || 0;
+            }
+
+            // Add item to the list
+            function addItem() {
+                const name = document.getElementById("itemName").value.trim();
+                const price = parseFormattedNumber(
+                    document.getElementById("itemPrice").value,
+                );
+                const quantity = parseInt(
+                    document.getElementById("itemQuantity").value,
+                );
+
+                // Validation
+                if (!name) {
+                    alert("Nama barang tidak boleh kosong!");
+                    return;
+                }
+
+                if (isNaN(price) || price <= 0) {
+                    alert("Harga harus berupa angka positif!");
+                    return;
+                }
+
+                if (isNaN(quantity) || quantity < 1) {
+                    alert("Jumlah harus berupa angka bulat positif!");
+                    return;
+                }
+
+                // Create item object
+                const item = {
+                    id: Date.now(), // Simple ID generation
+                    name: name,
+                    price: price,
+                    quantity: quantity,
+                    subtotal: price * quantity,
+                    isTax: false,
+                };
+
+                // Add to items array
+                items.push(item);
+
+                // Clear inputs
+                document.getElementById("itemName").value = "";
+                document.getElementById("itemPrice").value = "";
+                document.getElementById("itemQuantity").value = "1";
+
+                // Focus back to name input
+                document.getElementById("itemName").focus();
+
+                // Update table and totals
+                renderTable();
+                calculateTotal();
+            }
+
+            // Add tax to the list
+            function addTax() {
+                const name = document.getElementById("taxName").value.trim();
+                const price = parseFormattedNumber(
+                    document.getElementById("taxPrice").value,
+                );
+                const quantity = parseInt(
+                    document.getElementById("taxQuantity").value,
+                );
+
+                // Validation
+                if (!name) {
+                    alert("Nama pajak tidak boleh kosong!");
+                    return;
+                }
+
+                if (isNaN(price) || price <= 0) {
+                    alert("Tarif pajak harus berupa angka positif!");
+                    return;
+                }
+
+                if (isNaN(quantity) || quantity < 1) {
+                    alert("Jumlah harus berupa angka bulat positif!");
+                    return;
+                }
+
+                // Create tax item object
+                const item = {
+                    id: Date.now(),
+                    name: name,
+                    price: price,
+                    quantity: quantity,
+                    subtotal: price * quantity,
+                    isTax: true,
+                };
+
+                // Add to items array
+                items.push(item);
+
+                // Clear inputs
+                document.getElementById("taxName").value = "";
+                document.getElementById("taxPrice").value = "";
+                document.getElementById("taxQuantity").value = "1";
+
+                // Focus back to tax name input
+                document.getElementById("taxName").focus();
+
+                // Update table and totals
+                renderTable();
+                calculateTotal();
+            }
+
+            // Remove item from the list
+            function removeItem(id) {
+                items = items.filter((item) => item.id !== id);
+                renderTable();
+                calculateTotal();
+            }
+
+            // Render items table
+            function renderTable() {
+                const tbody = document.querySelector("#itemsTable tbody");
+                tbody.innerHTML = "";
+
+                items.forEach((item) => {
+                    const row = document.createElement("tr");
+
+                    let nameDisplay = item.name;
+                    if (item.isTax) {
+                        nameDisplay = `<strong>${item.name} (Pajak)</strong>`;
+                    } else if (item.person !== undefined) {
+                        const personName =
+                            item.personName || `Orang ${item.person}`;
+                        nameDisplay = `${item.name} <span style="font-size:0.8em;color:#3498db;">(${personName})</span>`;
+                    }
+
+                    row.innerHTML = `
+                    <td>${nameDisplay}</td>
+                    <td>${formatNumber(item.price)}</td>
+                    <td>${item.quantity}</td>
+                    <td>${formatNumber(item.subtotal)}</td>
+                    <td>
+                        <button class="actions-btn" onclick="removeItem(${item.id})">Hapus</button>
+                    </td>
+                    `;
+
+                    tbody.appendChild(row);
+                });
+            }
+
+            // Calculate total, discount, tax, and final amount
+            function calculateTotal() {
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value) || 1;
+
+                // Initialize per-person arrays
+                const personItems = Array(splitCount)
+                    .fill()
+                    .map(() => []);
+                const personTaxItems = Array(splitCount)
+                    .fill()
+                    .map(() => []);
+
+                // Calculate unassigned items value for equal distribution
+                const unassignedItems = items.filter(
+                    (item) => item.person === undefined,
+                );
+                const unassignedItemsSubtotal = unassignedItems
+                    .filter((item) => !item.isTax)
+                    .reduce((sum, item) => sum + item.subtotal, 0);
+                const unassignedTaxSubtotal = unassignedItems
+                    .filter((item) => item.isTax)
+                    .reduce((sum, item) => sum + item.subtotal, 0);
+
+                // Distribute unassigned items equally among all persons (when splitCount > 1)
+                if (splitCount > 1 && unassignedItemsSubtotal > 0) {
+                    const equalShare = unassignedItemsSubtotal / splitCount;
+                    for (let i = 0; i < splitCount; i++) {
+                        personItems[i].push({ subtotal: equalShare });
+                    }
+                }
+
+                // Distribute unassigned tax equally among all persons (when splitCount > 1)
+                if (splitCount > 1 && unassignedTaxSubtotal > 0) {
+                    const equalTaxShare = unassignedTaxSubtotal / splitCount;
+                    for (let i = 0; i < splitCount; i++) {
+                        personTaxItems[i].push({ subtotal: equalTaxShare });
+                    }
+                }
+
+                // Categorize items by person
+                items.forEach((item) => {
+                    if (
+                        item.person !== undefined &&
+                        item.person >= 1 &&
+                        item.person <= splitCount
+                    ) {
+                        if (item.isTax) {
+                            personTaxItems[item.person - 1].push(item);
+                        } else {
+                            personItems[item.person - 1].push(item);
+                        }
+                    } else {
+                        // Items without person assignment go to person 1 (or get distributed equally when splitCount > 1)
+                        if (splitCount === 1) {
+                            if (item.isTax) {
+                                personTaxItems[0].push(item);
+                            } else {
+                                personItems[0].push(item);
+                            }
+                        }
+                        // When splitCount > 1, unassigned items are already distributed equally above
+                    }
+                });
+
+                // Calculate totals for each person
+                const personTotals = [];
+                for (let i = 0; i < splitCount; i++) {
+                    const itemsSubtotal = personItems[i].reduce(
+                        (sum, item) => sum + item.subtotal,
+                        0,
+                    );
+                    const taxItemsSubtotal = personTaxItems[i].reduce(
+                        (sum, item) => sum + item.subtotal,
+                        0,
+                    );
+                    const personTotal = itemsSubtotal + taxItemsSubtotal;
+                    personTotals.push({
+                        subtotal: itemsSubtotal,
+                        tax: taxItemsSubtotal,
+                        total: personTotal,
+                    });
+                }
+
+                // Get discount and tax inputs
+                const discountAmountInput =
+                    parseFormattedNumber(
+                        document.getElementById("discountAmountInput").value,
+                    ) || 0;
+                const taxAmountInput =
+                    parseFormattedNumber(
+                        document.getElementById("taxAmountInput").value,
+                    ) || 0;
+                const discountPercent =
+                    parseFloat(
+                        document.getElementById("discountPercent").value,
+                    ) || 0;
+                const taxPercent =
+                    parseFloat(document.getElementById("taxPercent").value) ||
+                    0;
+
+                // Calculate overall subtotal and tax
+                const allItemsSubtotal = items
+                    .filter((item) => !item.isTax)
+                    .reduce((sum, item) => sum + item.subtotal, 0);
+                const allTaxItemsSubtotal = items
+                    .filter((item) => item.isTax)
+                    .reduce((sum, item) => sum + item.subtotal, 0);
+
+                // Calculate discount amount
+                let discountAmount = 0;
+                if (discountAmountInput > 0) {
+                    discountAmount = discountAmountInput;
+                    // Apply fixed discount proportionally to each person based on their item subtotal share
+                    for (let i = 0; i < personTotals.length; i++) {
+                        const personShare =
+                            personTotals[i].subtotal / (allItemsSubtotal || 1);
+                        personTotals[i].total = Math.max(
+                            0,
+                            personTotals[i].total -
+                                discountAmount * personShare,
+                        );
+                    }
+                } else if (discountPercent > 0) {
+                    discountAmount = allItemsSubtotal * (discountPercent / 100);
+                    // Apply percentage discount proportionally to each person based on their item subtotal share
+                    for (let i = 0; i < personTotals.length; i++) {
+                        const personShare =
+                            personTotals[i].subtotal / (allItemsSubtotal || 1);
+                        personTotals[i].total = Math.max(
+                            0,
+                            personTotals[i].total -
+                                discountAmount * personShare,
+                        );
+                    }
+                }
+
+                // Update person bill display in table
+                updatePersonBills(personTotals, splitCount);
+
+                // Calculate grand total
+                const grandTotal = personTotals.reduce(
+                    (sum, p) => sum + p.total,
+                    0,
+                );
+
+                // Update display
+                document.getElementById("subtotal").textContent =
+                    formatNumber(allItemsSubtotal);
+                document.getElementById("discountAmount").textContent =
+                    formatNumber(
+                        discountAmountInput > 0
+                            ? discountAmountInput
+                            : discountAmountInput === 0 && discountPercent > 0
+                              ? allItemsSubtotal * (discountPercent / 100)
+                              : 0,
+                    );
+                document.getElementById("taxAmount").textContent =
+                    formatNumber(allTaxItemsSubtotal);
+                document.getElementById("total").textContent =
+                    formatNumber(grandTotal);
+            }
+
+            // Update person bills display
+            function updatePersonBills(personTotals, splitCount) {
+                // Create or update person bill summary section
+                let personBillsHtml = '<div class="person-bills-section">';
+                personBillsHtml +=
+                    '<h3 class="person-bills-title">Tagihan per Orang:</h3>';
+
+                for (let i = 0; i < splitCount; i++) {
+                    // Get person name from badge or use default
+                    const badge = document.getElementById(
+                        `person${i + 1}Badge`,
+                    );
+                    const personName = badge
+                        ? badge.textContent
+                        : `Orang ${i + 1}`;
+                    personBillsHtml += `
+                    <div class="person-bill-row">
+                        <span>${personName}:</span>
+                        <span>Rp ${personTotals[i].total.toLocaleString("id-ID")}</span>
+                    </div>
+                    `;
+                }
+
+                personBillsHtml += "</div>";
+
+                // Update the person bills container
+                const existingBills = document.querySelector(
+                    ".person-bills-section",
+                );
+                if (existingBills) {
+                    existingBills.outerHTML = personBillsHtml;
+                } else {
+                    const container = document.querySelector(".summary");
+                    container.insertAdjacentHTML("afterbegin", personBillsHtml);
+                }
+            }
+
+            // Reset all data
+            function resetAll() {
+                if (confirm("Apakah Anda yakin ingin menghapus semua data?")) {
+                    items = [];
+                    document.getElementById("itemName").value = "";
+                    document.getElementById("itemPrice").value = "";
+                    document.getElementById("itemQuantity").value = "1";
+                    document.getElementById("discountPercent").value = "0";
+                    document.getElementById("discountAmountInput").value = "";
+                    document.getElementById("taxPercent").value = "0";
+                    document.getElementById("taxAmountInput").value = "";
+                    document.getElementById("splitCount").value = "1";
+                    // Clear person inputs container
+                    document.getElementById("personInputsContainer").innerHTML =
+                        "";
+                    // Remove person bills section
+                    const existingBills = document.querySelector(
+                        ".person-bills-section",
+                    );
+                    if (existingBills) existingBills.remove();
+                    renderTable();
+                    calculateTotal();
+                }
+            }
+
+            // Initialize
+            document.addEventListener("DOMContentLoaded", function () {
+                // Set default quantity to 1
+                document.getElementById("itemQuantity").value = "1";
+                // Focus on item name input
+                document.getElementById("itemName").focus();
+                // Generate person inputs based on initial splitCount
+                generatePersonInputs();
+                calculateTotal();
+            });
+
+            // Update person inputs on splitCount change
+            document
+                .getElementById("splitCount")
+                .addEventListener("change", function () {
+                    generatePersonInputs();
+                    calculateTotal();
+                });
+
+            // Allow Enter key to add item
+            document.addEventListener("keypress", function (e) {
+                if (e.key === "Enter") {
+                    // Prevent form submission if any input is focused
+                    const activeElement = document.activeElement;
+                    if (
+                        activeElement.tagName === "INPUT" ||
+                        activeElement.tagName === "TEXTAREA"
+                    ) {
+                        addItem();
+                    }
+                }
+            });
+
+            // Generate person input sections
+            function generatePersonInputs() {
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value) || 1;
+                const container = document.getElementById(
+                    "personInputsContainer",
+                );
+
+                if (splitCount <= 1) {
+                    container.innerHTML = "";
+                    return;
+                }
+
+                let html = '<div class="person-inputs-wrapper">';
+                html += '<h3 class="person-inputs-title">Item per Orang:</h3>';
+
+                for (let i = 1; i <= splitCount; i++) {
+                    html += `
+                    <div class="person-input-card" data-person="${i}">
+                        <div class="person-input-header">
+                            <span class="person-badge" id="person${i}Badge">Orang ${i}</span>
+                            <input type="text" id="person${i}Label" placeholder="Nama orang" oninput="updatePersonBadge(${i})" style="margin-left: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd;" />
+                        </div>
+                        <div class="person-input-fields">
+                            <div class="input-group-sm">
+                                <label for="person${i}Name">Nama Barang:</label>
+                                <input type="text" id="person${i}Name" placeholder="Nama barang" />
+                            </div>
+                            <div class="input-group-sm">
+                                <label for="person${i}Price">Harga:</label>
+                                <input type="text" id="person${i}Price" placeholder="Rp 0" oninput="formatRupiah(this)" />
+                            </div>
+                            <div class="input-group-sm">
+                                <label for="person${i}Quantity">Qty:</label>
+                                <input type="number" id="person${i}Quantity" placeholder="1" min="1" value="1" />
+                            </div>
+                        </div>
+                        <button class="btn-add-person-full" onclick="addPersonItem(${i})">Tambah Item Orang ${i}</button>
+                    </div>
+                    `;
+                }
+
+                html += "</div>";
+                container.innerHTML = html;
+            }
+
+            // Update person badge when name is entered
+            function updatePersonBadge(personNumber) {
+                const labelInput = document.getElementById(
+                    `person${personNumber}Label`,
+                );
+                const badge = document.getElementById(
+                    `person${personNumber}Badge`,
+                );
+                const name = labelInput.value.trim();
+                const displayName = name || `Orang ${personNumber}`;
+                badge.textContent = displayName;
+
+                // Update personName in all existing items for this person
+                items.forEach((item) => {
+                    if (item.person === personNumber) {
+                        item.personName = displayName;
+                    }
+                });
+                renderTable();
+            }
+
+            // Add item for specific person
+            function addPersonItem(personNumber) {
+                const suffix = personNumber;
+                const name = document
+                    .getElementById(`person${suffix}Name`)
+                    .value.trim();
+                const price = parseFormattedNumber(
+                    document.getElementById(`person${suffix}Price`).value,
+                );
+                const quantity = parseInt(
+                    document.getElementById(`person${suffix}Quantity`).value,
+                );
+
+                if (!name) {
+                    alert("Nama barang tidak boleh kosong!");
+                    return;
+                }
+
+                if (isNaN(price) || price <= 0) {
+                    alert("Harga harus berupa angka positif!");
+                    return;
+                }
+
+                if (isNaN(quantity) || quantity < 1) {
+                    alert("Jumlah harus berupa angka bulat positif!");
+                    return;
+                }
+
+                const labelInput = document.getElementById(
+                    `person${suffix}Label`,
+                );
+                const personName =
+                    labelInput.value.trim() || `Orang ${personNumber}`;
+
+                const item = {
+                    id: Date.now() + Math.random(),
+                    name: name,
+                    price: price,
+                    quantity: quantity,
+                    subtotal: price * quantity,
+                    isTax: false,
+                    person: personNumber,
+                    personName: personName,
+                };
+
+                items.push(item);
+
+                document.getElementById(`person${suffix}Name`).value = "";
+                document.getElementById(`person${suffix}Price`).value = "";
+                document.getElementById(`person${suffix}Quantity`).value = "1";
+
+                document.getElementById(`person${suffix}Name`).focus();
+
+                renderTable();
+                calculateTotal();
+            }
+        </script>
+    </body>
+</html>
