@@ -28,6 +28,56 @@
                 box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             }
 
+            .login-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.45);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 3000;
+                padding: 16px;
+            }
+
+            .login-card {
+                width: 100%;
+                max-width: 420px;
+                background: #fff;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 14px 36px rgba(15, 23, 42, 0.25);
+            }
+
+            .login-card h2 {
+                margin: 0 0 14px 0;
+                color: #2c3e50;
+                text-align: center;
+            }
+
+            .login-error {
+                margin-top: 10px;
+                color: #c0392b;
+                font-size: 0.9em;
+                min-height: 20px;
+            }
+
+            .login-switch {
+                margin-top: 10px;
+                text-align: center;
+                font-size: 0.9em;
+                color: #4b5563;
+            }
+
+            .login-switch button {
+                background: none;
+                color: #2563eb;
+                padding: 0;
+                border: none;
+                font-size: 0.9em;
+                text-decoration: underline;
+                cursor: pointer;
+            }
+
             h1 {
                 text-align: center;
                 color: #2c3e50;
@@ -59,9 +109,23 @@
                 font-size: 16px;
             }
 
+            .input-group select {
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 16px;
+                background: #fff;
+            }
+
             .input-group input:focus {
                 outline: none;
                 border-color: #3498db;
+            }
+
+            .section-divider {
+                border: 0;
+                border-top: 1px solid #e3e8f1;
+                margin: 8px 0 18px;
             }
 
             button {
@@ -81,6 +145,20 @@
 
             .btn-add {
                 grid-column: 1 / -1;
+            }
+
+            .top-friend-actions .btn-add,
+            .top-friend-actions .btn-reset {
+                grid-column: auto;
+                width: 100%;
+            }
+
+            .btn-add-green {
+                background-color: #27ae60;
+            }
+
+            .btn-add-green:hover {
+                background-color: #219a52;
             }
 
             .btn-actions {
@@ -159,6 +237,12 @@
             .summary-input .input-wrapper {
                 position: relative;
                 flex: 1;
+            }
+
+            .btn-split-apply {
+                padding: 10px 14px;
+                font-size: 14px;
+                white-space: nowrap;
             }
 
             .summary-input input {
@@ -358,9 +442,13 @@
 
             .person-input-fields {
                 display: grid;
-                grid-template-columns: 2fr 1fr 1fr auto;
+                grid-template-columns: 2fr 1fr 1fr;
                 gap: 10px;
                 align-items: end;
+            }
+
+            .person-target-row {
+                margin-bottom: 10px;
             }
 
             .input-group-sm {
@@ -382,7 +470,21 @@
                 font-size: 14px;
             }
 
+            .input-group-sm select {
+                padding: 8px 10px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                font-size: 14px;
+                background: #fff;
+            }
+
             .input-group-sm input:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            }
+
+            .input-group-sm select:focus {
                 outline: none;
                 border-color: #3498db;
                 box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
@@ -422,6 +524,201 @@
             .btn-add-person-full:hover {
                 transform: translateY(-1px);
                 box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            }
+
+            .person-submit-row {
+                margin-top: 10px;
+            }
+
+            .person-submit-row .btn-add {
+                width: 100%;
+                grid-column: auto;
+            }
+
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+                padding: 16px;
+            }
+
+            .modal-overlay.show {
+                display: flex;
+            }
+
+            .modal-content {
+                width: 100%;
+                max-width: 460px;
+                background: #fff;
+                border-radius: 10px;
+                padding: 20px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            }
+
+            .modal-title {
+                margin: 0 0 14px 0;
+                color: #2c3e50;
+            }
+
+            .modal-actions {
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                margin-top: 12px;
+            }
+
+            .loading-card {
+                width: 100%;
+                max-width: 320px;
+                background: #fff;
+                border-radius: 10px;
+                padding: 20px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .loading-spinner {
+                width: 22px;
+                height: 22px;
+                border: 3px solid #dce9ff;
+                border-top-color: #3498db;
+                border-radius: 50%;
+                animation: spin-loading 0.8s linear infinite;
+                flex-shrink: 0;
+            }
+
+            .loading-text {
+                margin: 0;
+                color: #2c3e50;
+                font-weight: 600;
+            }
+
+            @keyframes spin-loading {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .friends-list {
+                margin-top: 14px;
+                border: 1px solid #e4e8ef;
+                border-radius: 8px;
+                max-height: 174px;
+                overflow-y: auto;
+                background: #fafcff;
+            }
+
+            .friend-list-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                min-height: 58px;
+                padding: 10px 12px;
+                border-bottom: 1px solid #edf1f7;
+            }
+
+            .friend-list-item:last-child {
+                border-bottom: 0;
+            }
+
+            .friend-list-name {
+                font-weight: bold;
+                color: #2c3e50;
+            }
+
+            .friend-list-rekening {
+                font-size: 13px;
+                color: #6b778c;
+            }
+
+            .friend-delete-btn {
+                padding: 8px 10px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            .friend-list-empty {
+                padding: 12px;
+                color: #7a869a;
+                text-align: center;
+            }
+
+            .assign-friends-fields {
+                margin-top: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                max-height: 280px;
+                overflow-y: auto;
+                padding-right: 2px;
+            }
+
+            .assign-friend-row {
+                display: grid;
+                grid-template-columns: 95px 1fr;
+                gap: 10px;
+                align-items: center;
+                background: #f7faff;
+                border: 1px solid #dce9ff;
+                border-radius: 8px;
+                padding: 10px 12px;
+            }
+
+            .assign-friend-row label {
+                font-weight: bold;
+                color: #2c3e50;
+                font-size: 0.9em;
+            }
+
+            .assign-friend-select {
+                width: 100%;
+                padding: 9px 10px;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                background: #fff;
+            }
+
+            .assign-modal-content {
+                max-width: 540px;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            .assign-modal-header {
+                padding: 16px 20px;
+                background: linear-gradient(135deg, #eef5ff 0%, #dfeeff 100%);
+                border-bottom: 1px solid #d2e5ff;
+            }
+
+            .assign-modal-title {
+                margin: 0;
+                color: #1f3b63;
+            }
+
+            .assign-modal-subtitle {
+                margin: 6px 0 0 0;
+                font-size: 13px;
+                color: #4c6488;
+            }
+
+            .assign-modal-body {
+                padding: 16px 20px 12px;
+            }
+
+            .assign-modal-actions {
+                margin-top: 14px;
+                padding-top: 12px;
+                border-top: 1px solid #e8eef7;
             }
 
             .person-bills-section {
@@ -621,12 +918,66 @@
         </style>
     </head>
     <body>
-        <div class="container">
+        <div id="loginOverlay" class="login-overlay">
+            <div class="login-card">
+                <h2 id="loginTitle">Login</h2>
+                <div class="input-group">
+                    <label for="loginUsername">Username:</label>
+                    <input type="text" id="loginUsername" placeholder="Masukkan username" />
+                </div>
+                <div class="input-group" style="margin-top: 10px;">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" placeholder="Masukkan password" />
+                </div>
+                <div id="loginConfirmGroup" class="input-group" style="margin-top: 10px; display: none;">
+                    <label for="loginConfirmPassword">Konfirmasi Password:</label>
+                    <input type="password" id="loginConfirmPassword" placeholder="Ulangi password" />
+                </div>
+                <div class="input-group" style="margin-top: 14px;">
+                    <button id="loginSubmitButton" class="btn-add" onclick="submitAuth()">Masuk</button>
+                </div>
+                <div id="loginError" class="login-error"></div>
+                <div class="login-switch">
+                    <span id="loginSwitchText">Belum punya akun?</span>
+                    <button type="button" onclick="toggleAuthMode()">Daftar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="appContainer" class="container" style="display: none;">
             <h1>Struk Tagihan</h1>
+
+            <div class="input-section top-friend-actions" style="margin-bottom: 10px;">
+                <div class="input-group">
+                    <button class="btn-add" onclick="openAddFriendModal()">Tambah Teman</button>
+                </div>
+                <div class="input-group">
+                    <button
+                        id="adminUsersButton"
+                        class="btn-add"
+                        style="display: none;"
+                        onclick="openAdminUsersModal()"
+                    >
+                        Kelola User
+                    </button>
+                </div>
+                <div class="input-group">
+                    <button class="btn-reset" onclick="openLogoutConfirmModal()">Logout</button>
+                </div>
+            </div>
+
+            <hr class="section-divider" />
 
             <div class="input-section">
                 <div class="input-group">
-                    <label for="itemName">Nama Barang:</label>
+                    <label for="itemType">Jenis:</label>
+                    <select id="itemType" onchange="updateItemFormByType()">
+                        <option value="item" selected>Item</option>
+                        <option value="tax">Pajak</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="itemName" id="itemNameLabel">Nama Barang:</label>
                     <input
                         type="text"
                         id="itemName"
@@ -635,7 +986,7 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="itemPrice">Harga Satuan:</label>
+                    <label for="itemPrice" id="itemPriceLabel">Harga Satuan:</label>
                     <input
                         type="text"
                         id="itemPrice"
@@ -655,37 +1006,7 @@
                     />
                 </div>
 
-                <button class="btn-add" onclick="addItem()">Tambah Item</button>
-            </div>
-
-            <div class="input-section">
-                <div class="input-group">
-                    <label for="taxName">Nama Pajak:</label>
-                    <input type="text" id="taxName" placeholder="Nama pajak" />
-                </div>
-
-                <div class="input-group">
-                    <label for="taxPrice">Tarif Pajak (Rp):</label>
-                    <input
-                        type="text"
-                        id="taxPrice"
-                        placeholder="Tarif"
-                        oninput="formatRupiah(this)"
-                    />
-                </div>
-
-                <div class="input-group">
-                    <label for="taxQuantity">Jumlah:</label>
-                    <input
-                        type="number"
-                        id="taxQuantity"
-                        placeholder="Qty"
-                        min="1"
-                        value="1"
-                    />
-                </div>
-
-                <button class="btn-add" onclick="addTax()">Tambah Pajak</button>
+                <button id="itemSubmitButton" class="btn-add btn-add-green" onclick="addItem()">Tambah Item</button>
             </div>
 
             <div id="personInputsContainer">
@@ -708,10 +1029,10 @@
             </table>
 
             <div class="btn-actions">
-                <button class="btn-print" onclick="window.print()">
+                <button class="btn-print" onclick="openMainActionConfirmModal('print')">
                     Cetak
                 </button>
-                <button class="btn-reset" onclick="resetAll()">Reset</button>
+                <button class="btn-reset" onclick="openMainActionConfirmModal('reset')">Reset</button>
             </div>
 
             <div class="summary">
@@ -797,7 +1118,6 @@
                             placeholder="1"
                             min="1"
                             value="1"
-                            onchange="calculateTotal()"
                             onclick="
                                 if (this.value === '1') {
                                     this.value = '';
@@ -810,6 +1130,9 @@
                             "
                         />
                     </div>
+                    <button class="btn-add btn-split-apply" type="button" onclick="applySplitCount()">
+                        Terapkan
+                    </button>
                 </div>
                 <div class="summary-row-display">
                     <span>Subtotal:</span>
@@ -833,11 +1156,423 @@
                 Format angka menggunakan titik sebagai pemisah ribuan (contoh:
                 Rp 10.000)
             </div>
+
+            <div id="addFriendModal" class="modal-overlay" onclick="handleAddFriendModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 class="modal-title">Kelola Teman</h3>
+                    <div class="input-group">
+                        <label for="newPersonName">Nama:</label>
+                        <input type="text" id="newPersonName" placeholder="Nama teman" />
+                    </div>
+                    <div class="input-group">
+                        <label for="personRekening">No Rekening:</label>
+                        <input type="text" id="personRekening" placeholder="Nomor rekening" />
+                    </div>
+                    <div class="friends-list" id="friendsList"></div>
+                    <div class="modal-actions">
+                        <button class="btn-reset" onclick="closeAddFriendModal()">Tutup</button>
+                        <button class="btn-add" onclick="savePerson()">Simpan</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminUsersModal" class="modal-overlay" onclick="handleAdminUsersModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 class="modal-title">Kelola User</h3>
+                    <p style="margin: 0; color: #6b778c;">Daftar user non-admin.</p>
+                    <div class="friends-list" id="adminUsersList"></div>
+                    <div class="modal-actions">
+                        <button class="btn-reset" onclick="closeAdminUsersModal()">Tutup</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="deleteUserModal" class="modal-overlay" onclick="handleDeleteUserModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 class="modal-title">Konfirmasi Hapus User</h3>
+                    <p id="deleteUserMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <div class="modal-actions">
+                        <button class="btn-add" onclick="closeDeleteUserModal()">Batal</button>
+                        <button class="btn-reset" onclick="confirmDeleteUser()">Hapus</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="assignFriendsModal" class="modal-overlay" onclick="handleAssignFriendsModalBackdrop(event)">
+                <div class="modal-content assign-modal-content">
+                    <div class="assign-modal-header">
+                        <h3 class="assign-modal-title">Pilih Teman per Orang</h3>
+                        <p class="assign-modal-subtitle">Tentukan teman untuk tiap orang sebelum Item per Orang ditampilkan.</p>
+                    </div>
+                    <div class="assign-modal-body">
+                        <div id="assignFriendsFields" class="assign-friends-fields"></div>
+                        <div class="modal-actions assign-modal-actions">
+                            <button class="btn-reset" onclick="closeAssignFriendsModal()">Batal</button>
+                            <button class="btn-add" onclick="applySelectedFriendsFromModal()">Simpan Pilihan</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="deleteFriendModal" class="modal-overlay" onclick="handleDeleteFriendModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 class="modal-title">Konfirmasi Hapus Teman</h3>
+                    <p id="deleteFriendMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <div class="modal-actions">
+                        <button class="btn-add" onclick="closeDeleteFriendModal()">Batal</button>
+                        <button class="btn-reset" onclick="confirmDeleteFriend()">Hapus</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="friendSuccessModal" class="modal-overlay" onclick="handleFriendSuccessModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 class="modal-title">Berhasil</h3>
+                    <p id="friendSuccessMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <div class="modal-actions">
+                        <button class="btn-add" onclick="closeFriendSuccessModal()">OK</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mainActionConfirmModal" class="modal-overlay" onclick="handleMainActionConfirmModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 id="mainActionConfirmTitle" class="modal-title">Konfirmasi</h3>
+                    <p id="mainActionConfirmMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <div class="modal-actions">
+                        <button class="btn-add" onclick="closeMainActionConfirmModal()">Batal</button>
+                        <button id="mainActionConfirmButton" class="btn-reset" onclick="confirmMainAction()">Lanjutkan</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="logoutConfirmModal" class="modal-overlay" onclick="handleLogoutConfirmModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 class="modal-title">Konfirmasi Logout</h3>
+                    <p style="margin: 0; color: #2c3e50;">Yakin ingin keluar dari akun ini?</p>
+                    <div class="modal-actions">
+                        <button class="btn-add" onclick="closeLogoutConfirmModal()">Batal</button>
+                        <button class="btn-reset" onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="splitWarningModal" class="modal-overlay" onclick="handleSplitWarningModalBackdrop(event)">
+                <div class="modal-content">
+                    <h3 class="modal-title">Peringatan</h3>
+                    <p style="margin: 0; color: #2c3e50;">
+                        Item belum ada di tabel. Tambahkan item terlebih dahulu sebelum menerapkan jumlah orang.
+                    </p>
+                    <div class="modal-actions">
+                        <button class="btn-add" onclick="closeSplitWarningModal()">OK</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loadingModal" class="modal-overlay">
+                <div class="loading-card">
+                    <div class="loading-spinner"></div>
+                    <p id="loadingMessage" class="loading-text">Memproses data...</p>
+                </div>
+            </div>
         </div>
 
         <script>
             // Array to store items
             let items = [];
+            let peopleCache = [];
+            let selectedSplitPeople = [];
+            let pendingDeleteFriend = null;
+            let pendingMainAction = null;
+            let authToken = localStorage.getItem('authToken') || '';
+            let authMode = 'login';
+            let currentUser = null;
+            let adminUsersCache = [];
+            let pendingDeleteUser = null;
+            let loadingCount = 0;
+
+            function setAuthToken(token) {
+                authToken = token || '';
+                if (authToken) {
+                    localStorage.setItem('authToken', authToken);
+                } else {
+                    localStorage.removeItem('authToken');
+                }
+            }
+
+            function setCurrentUser(user) {
+                currentUser = user || null;
+                updateAdminUsersButtonVisibility();
+            }
+
+            function updateAdminUsersButtonVisibility() {
+                const button = document.getElementById('adminUsersButton');
+                if (!button) {
+                    return;
+                }
+                const isAdmin =
+                    String(currentUser?.role || '').toLowerCase() === 'admin';
+                button.style.display = isAdmin ? 'block' : 'none';
+            }
+
+            function showLoading(message) {
+                const modal = document.getElementById('loadingModal');
+                const textElement = document.getElementById('loadingMessage');
+                loadingCount += 1;
+                if (textElement) {
+                    textElement.textContent = message || 'Memproses data...';
+                }
+                if (modal) {
+                    modal.classList.add('show');
+                }
+            }
+
+            function hideLoading() {
+                const modal = document.getElementById('loadingModal');
+                loadingCount = Math.max(0, loadingCount - 1);
+                if (loadingCount === 0 && modal) {
+                    modal.classList.remove('show');
+                }
+            }
+
+            function showLoginOverlay(message) {
+                const overlay = document.getElementById('loginOverlay');
+                const appContainer = document.getElementById('appContainer');
+                const errorElement = document.getElementById('loginError');
+                if (errorElement) {
+                    errorElement.textContent = message || '';
+                }
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                }
+                if (appContainer) {
+                    appContainer.style.display = 'none';
+                }
+                closeAdminUsersModal();
+                closeDeleteUserModal();
+                closeLogoutConfirmModal();
+            }
+
+            function setAuthMode(mode) {
+                authMode = mode === 'register' ? 'register' : 'login';
+                const isRegister = authMode === 'register';
+
+                const loginTitle = document.getElementById('loginTitle');
+                const submitButton = document.getElementById('loginSubmitButton');
+                const switchText = document.getElementById('loginSwitchText');
+                const switchButton = document.querySelector('.login-switch button');
+                const confirmGroup = document.getElementById('loginConfirmGroup');
+                const errorElement = document.getElementById('loginError');
+                const usernameInput = document.getElementById('loginUsername');
+                const passwordInput = document.getElementById('loginPassword');
+                const confirmPasswordInput = document.getElementById('loginConfirmPassword');
+
+                if (loginTitle) {
+                    loginTitle.textContent = isRegister ? 'Daftar' : 'Login';
+                }
+                if (submitButton) {
+                    submitButton.textContent = isRegister ? 'Daftar' : 'Masuk';
+                }
+                if (switchText) {
+                    switchText.textContent = isRegister
+                        ? 'Sudah punya akun?'
+                        : 'Belum punya akun?';
+                }
+                if (switchButton) {
+                    switchButton.textContent = isRegister ? 'Login' : 'Daftar';
+                }
+                if (confirmGroup) {
+                    confirmGroup.style.display = isRegister ? 'flex' : 'none';
+                }
+                if (errorElement) {
+                    errorElement.textContent = '';
+                }
+                if (usernameInput) {
+                    usernameInput.value = '';
+                }
+                if (passwordInput) {
+                    passwordInput.value = '';
+                }
+                if (confirmPasswordInput) {
+                    confirmPasswordInput.value = '';
+                }
+            }
+
+            function toggleAuthMode() {
+                setAuthMode(authMode === 'login' ? 'register' : 'login');
+            }
+
+            function hideLoginOverlay() {
+                const overlay = document.getElementById('loginOverlay');
+                const appContainer = document.getElementById('appContainer');
+                const errorElement = document.getElementById('loginError');
+                if (errorElement) {
+                    errorElement.textContent = '';
+                }
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+                if (appContainer) {
+                    appContainer.style.display = 'block';
+                }
+            }
+
+            async function apiFetch(url, options = {}) {
+                const headers = Object.assign({}, options.headers || {});
+                if (authToken) {
+                    headers.Authorization = `Bearer ${authToken}`;
+                }
+                const response = await fetch(url, {
+                    ...options,
+                    headers,
+                });
+                if (response.status === 401 && !url.startsWith('/api/auth/')) {
+                    setAuthToken('');
+                    showLoginOverlay('Sesi habis, silakan login lagi.');
+                }
+                return response;
+            }
+
+            async function login() {
+                const username = String(
+                    document.getElementById('loginUsername').value || '',
+                ).trim();
+                const password = String(
+                    document.getElementById('loginPassword').value || '',
+                );
+
+                if (!username || !password) {
+                    showLoginOverlay('Username dan password wajib diisi.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password }),
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Login gagal');
+                    }
+
+                    setAuthToken(result.token);
+                    setCurrentUser(result.user || null);
+                    hideLoginOverlay();
+                    await loadPeopleFromDb();
+                } catch (err) {
+                    showLoginOverlay(err.message);
+                }
+            }
+
+            async function register() {
+                const username = String(
+                    document.getElementById('loginUsername').value || '',
+                ).trim();
+                const password = String(
+                    document.getElementById('loginPassword').value || '',
+                );
+                const confirmPassword = String(
+                    document.getElementById('loginConfirmPassword').value || '',
+                );
+
+                if (!username || !password || !confirmPassword) {
+                    showLoginOverlay('Username, password, dan konfirmasi wajib diisi.');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showLoginOverlay('Konfirmasi password tidak sama.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password }),
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Daftar gagal');
+                    }
+
+                    setAuthMode('login');
+                    showLoginOverlay('Daftar berhasil. Silakan login.');
+                } catch (err) {
+                    showLoginOverlay(err.message);
+                }
+            }
+
+            function submitAuth() {
+                if (authMode === 'register') {
+                    register();
+                    return;
+                }
+                login();
+            }
+
+            function openLogoutConfirmModal() {
+                const modal = document.getElementById('logoutConfirmModal');
+                if (modal) {
+                    modal.classList.add('show');
+                }
+            }
+
+            function closeLogoutConfirmModal() {
+                const modal = document.getElementById('logoutConfirmModal');
+                if (modal) {
+                    modal.classList.remove('show');
+                }
+            }
+
+            function handleLogoutConfirmModalBackdrop(event) {
+                if (event.target.id === 'logoutConfirmModal') {
+                    closeLogoutConfirmModal();
+                }
+            }
+
+            async function logout() {
+                closeLogoutConfirmModal();
+                try {
+                    await apiFetch('/api/auth/logout', { method: 'POST' });
+                } catch (err) {
+                }
+                setAuthToken('');
+                setCurrentUser(null);
+                setAuthMode('login');
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginConfirmPassword').value = '';
+                showLoginOverlay();
+            }
+
+            async function checkAuthOnLoad() {
+                if (!authToken) {
+                    setAuthMode('login');
+                    showLoginOverlay();
+                    return;
+                }
+
+                try {
+                    const response = await apiFetch('/api/auth/me');
+                    const result = await response.json();
+                    if (!response.ok) {
+                        setAuthToken('');
+                        setCurrentUser(null);
+                        showLoginOverlay();
+                        return;
+                    }
+                    setCurrentUser(result || null);
+                    hideLoginOverlay();
+                    await loadPeopleFromDb();
+                } catch (err) {
+                    setAuthToken('');
+                    setCurrentUser(null);
+                    setAuthMode('login');
+                    showLoginOverlay('Gagal memeriksa sesi login.');
+                }
+            }
 
             // Format number with thousand separator using dot
             function formatNumber(number) {
@@ -879,24 +1614,42 @@
                 return parseFloat(formatted.replace(/[^\d,-]/g, "")) || 0;
             }
 
+            function updateItemFormByType() {
+                const itemType = document.getElementById("itemType").value;
+                const isTax = itemType === "tax";
+                document.getElementById("itemNameLabel").textContent = isTax
+                    ? "Nama Pajak:"
+                    : "Nama Barang:";
+                document.getElementById("itemPriceLabel").textContent = isTax
+                    ? "Tarif Pajak (Rp):"
+                    : "Harga Satuan:";
+                document.getElementById("itemSubmitButton").textContent = isTax
+                    ? "Tambah Pajak"
+                    : "Tambah Item";
+            }
+
             // Add item to the list
             function addItem() {
+                const itemType = document.getElementById("itemType").value;
                 const name = document.getElementById("itemName").value.trim();
                 const price = parseFormattedNumber(
                     document.getElementById("itemPrice").value,
                 );
+                const isTax = itemType === "tax";
+                const nameLabel = isTax ? "Nama pajak" : "Nama barang";
+                const priceLabel = isTax ? "Tarif pajak" : "Harga";
                 const quantity = parseInt(
                     document.getElementById("itemQuantity").value,
                 );
 
                 // Validation
                 if (!name) {
-                    alert("Nama barang tidak boleh kosong!");
+                    alert(`${nameLabel} tidak boleh kosong!`);
                     return;
                 }
 
                 if (isNaN(price) || price <= 0) {
-                    alert("Harga harus berupa angka positif!");
+                    alert(`${priceLabel} harus berupa angka positif!`);
                     return;
                 }
 
@@ -912,7 +1665,7 @@
                     price: price,
                     quantity: quantity,
                     subtotal: price * quantity,
-                    isTax: false,
+                    isTax: isTax,
                 };
 
                 // Add to items array
@@ -922,61 +1675,11 @@
                 document.getElementById("itemName").value = "";
                 document.getElementById("itemPrice").value = "";
                 document.getElementById("itemQuantity").value = "1";
+                document.getElementById("itemType").value = "item";
+                updateItemFormByType();
 
                 // Focus back to name input
                 document.getElementById("itemName").focus();
-
-                // Update table and totals
-                renderTable();
-                calculateTotal();
-            }
-
-            // Add tax to the list
-            function addTax() {
-                const name = document.getElementById("taxName").value.trim();
-                const price = parseFormattedNumber(
-                    document.getElementById("taxPrice").value,
-                );
-                const quantity = parseInt(
-                    document.getElementById("taxQuantity").value,
-                );
-
-                // Validation
-                if (!name) {
-                    alert("Nama pajak tidak boleh kosong!");
-                    return;
-                }
-
-                if (isNaN(price) || price <= 0) {
-                    alert("Tarif pajak harus berupa angka positif!");
-                    return;
-                }
-
-                if (isNaN(quantity) || quantity < 1) {
-                    alert("Jumlah harus berupa angka bulat positif!");
-                    return;
-                }
-
-                // Create tax item object
-                const item = {
-                    id: Date.now(),
-                    name: name,
-                    price: price,
-                    quantity: quantity,
-                    subtotal: price * quantity,
-                    isTax: true,
-                };
-
-                // Add to items array
-                items.push(item);
-
-                // Clear inputs
-                document.getElementById("taxName").value = "";
-                document.getElementById("taxPrice").value = "";
-                document.getElementById("taxQuantity").value = "1";
-
-                // Focus back to tax name input
-                document.getElementById("taxName").focus();
 
                 // Update table and totals
                 renderTable();
@@ -1186,19 +1889,30 @@
 
             // Update person bills display
             function updatePersonBills(personTotals, splitCount) {
+                const existingBills = document.querySelector(
+                    ".person-bills-section",
+                );
+                const personInputsContainer = document.getElementById(
+                    "personInputsContainer",
+                );
+                const hasPersonInputs =
+                    !!personInputsContainer &&
+                    personInputsContainer.innerHTML.trim() !== "";
+
+                if (splitCount <= 1 || !hasPersonInputs) {
+                    if (existingBills) {
+                        existingBills.remove();
+                    }
+                    return;
+                }
+
                 // Create or update person bill summary section
                 let personBillsHtml = '<div class="person-bills-section">';
                 personBillsHtml +=
                     '<h3 class="person-bills-title">Tagihan per Orang:</h3>';
 
                 for (let i = 0; i < splitCount; i++) {
-                    // Get person name from badge or use default
-                    const badge = document.getElementById(
-                        `person${i + 1}Badge`,
-                    );
-                    const personName = badge
-                        ? badge.textContent
-                        : `Orang ${i + 1}`;
+                    const personName = getPersonDisplayName(i + 1);
                     personBillsHtml += `
                     <div class="person-bill-row">
                         <span>${personName}:</span>
@@ -1210,9 +1924,6 @@
                 personBillsHtml += "</div>";
 
                 // Update the person bills container
-                const existingBills = document.querySelector(
-                    ".person-bills-section",
-                );
                 if (existingBills) {
                     existingBills.outerHTML = personBillsHtml;
                 } else {
@@ -1221,35 +1932,47 @@
                 }
             }
 
+            function getPersonDisplayName(personNumber) {
+                const matchedPerson = selectedSplitPeople.find(
+                    (person) => person.personIndex === personNumber,
+                );
+                if (matchedPerson && matchedPerson.name) {
+                    return matchedPerson.name;
+                }
+                return `Orang ${personNumber}`;
+            }
+
             // Reset all data
             function resetAll() {
-                if (confirm("Apakah Anda yakin ingin menghapus semua data?")) {
-                    items = [];
-                    document.getElementById("itemName").value = "";
-                    document.getElementById("itemPrice").value = "";
-                    document.getElementById("itemQuantity").value = "1";
-                    document.getElementById("discountPercent").value = "0";
-                    document.getElementById("discountAmountInput").value = "";
-                    document.getElementById("taxPercent").value = "0";
-                    document.getElementById("taxAmountInput").value = "";
-                    document.getElementById("splitCount").value = "1";
-                    // Clear person inputs container
-                    document.getElementById("personInputsContainer").innerHTML =
-                        "";
-                    // Remove person bills section
-                    const existingBills = document.querySelector(
-                        ".person-bills-section",
-                    );
-                    if (existingBills) existingBills.remove();
-                    renderTable();
-                    calculateTotal();
-                }
+                items = [];
+                selectedSplitPeople = [];
+                document.getElementById("itemName").value = "";
+                document.getElementById("itemPrice").value = "";
+                document.getElementById("itemQuantity").value = "1";
+                document.getElementById("itemType").value = "item";
+                updateItemFormByType();
+                document.getElementById("discountPercent").value = "0";
+                document.getElementById("discountAmountInput").value = "";
+                document.getElementById("taxPercent").value = "0";
+                document.getElementById("taxAmountInput").value = "";
+                document.getElementById("splitCount").value = "1";
+                // Clear person inputs container
+                document.getElementById("personInputsContainer").innerHTML =
+                    "";
+                // Remove person bills section
+                const existingBills = document.querySelector(
+                    ".person-bills-section",
+                );
+                if (existingBills) existingBills.remove();
+                renderTable();
+                calculateTotal();
             }
 
             // Initialize
             document.addEventListener("DOMContentLoaded", function () {
                 // Set default quantity to 1
                 document.getElementById("itemQuantity").value = "1";
+                updateItemFormByType();
                 // Focus on item name input
                 document.getElementById("itemName").focus();
                 // Generate person inputs based on initial splitCount
@@ -1258,16 +1981,139 @@
             });
 
             // Update person inputs on splitCount change
-            document
-                .getElementById("splitCount")
-                .addEventListener("change", function () {
+            function applySplitCount() {
+                const splitInput = document.getElementById("splitCount");
+                let splitCount = parseInt(splitInput.value, 10);
+                if (isNaN(splitCount) || splitCount < 1) {
+                    splitCount = 1;
+                }
+                splitInput.value = String(splitCount);
+
+                if (!Array.isArray(items) || items.length === 0) {
+                    openSplitWarningModal();
+                    return;
+                }
+
+                if (splitCount <= 1) {
+                    selectedSplitPeople = [];
                     generatePersonInputs();
                     calculateTotal();
-                });
+                    return;
+                }
+
+                openAssignFriendsModal(splitCount);
+            }
+
+            function openSplitWarningModal() {
+                const modal = document.getElementById("splitWarningModal");
+                modal.classList.add("show");
+            }
+
+            function closeSplitWarningModal() {
+                const modal = document.getElementById("splitWarningModal");
+                modal.classList.remove("show");
+            }
+
+            function handleSplitWarningModalBackdrop(event) {
+                if (event.target.id === "splitWarningModal") {
+                    closeSplitWarningModal();
+                }
+            }
+
+            function openMainActionConfirmModal(action) {
+                pendingMainAction = action;
+                const title = document.getElementById('mainActionConfirmTitle');
+                const message = document.getElementById('mainActionConfirmMessage');
+                const confirmButton = document.getElementById('mainActionConfirmButton');
+
+                if (action === 'print') {
+                    title.textContent = 'Konfirmasi Cetak';
+                    message.textContent = 'Apakah Anda yakin ingin mencetak struk ini?';
+                    confirmButton.textContent = 'Cetak';
+                    confirmButton.className = 'btn-print';
+                } else {
+                    title.textContent = 'Konfirmasi Reset';
+                    message.textContent = 'Apakah Anda yakin ingin menghapus semua data?';
+                    confirmButton.textContent = 'Reset';
+                    confirmButton.className = 'btn-reset';
+                }
+
+                const modal = document.getElementById('mainActionConfirmModal');
+                modal.classList.add('show');
+            }
+
+            function closeMainActionConfirmModal() {
+                const modal = document.getElementById('mainActionConfirmModal');
+                modal.classList.remove('show');
+                pendingMainAction = null;
+            }
+
+            function handleMainActionConfirmModalBackdrop(event) {
+                if (event.target.id === 'mainActionConfirmModal') {
+                    closeMainActionConfirmModal();
+                }
+            }
+
+            function confirmMainAction() {
+                const action = pendingMainAction;
+                closeMainActionConfirmModal();
+                if (action === 'print') {
+                    window.print();
+                    return;
+                }
+                if (action === 'reset') {
+                    resetAll();
+                }
+            }
 
             // Allow Enter key to add item
             document.addEventListener("keypress", function (e) {
                 if (e.key === "Enter") {
+                    const loginOverlay = document.getElementById("loginOverlay");
+                    if (loginOverlay && loginOverlay.style.display !== "none") {
+                        submitAuth();
+                        return;
+                    }
+                    const modal = document.getElementById("addFriendModal");
+                    if (modal && modal.classList.contains("show")) {
+                        savePerson();
+                        return;
+                    }
+                    const assignModal = document.getElementById("assignFriendsModal");
+                    if (assignModal && assignModal.classList.contains("show")) {
+                        applySelectedFriendsFromModal();
+                        return;
+                    }
+                    const warningModal = document.getElementById("splitWarningModal");
+                    if (warningModal && warningModal.classList.contains("show")) {
+                        closeSplitWarningModal();
+                        return;
+                    }
+                    const deleteFriendModal = document.getElementById("deleteFriendModal");
+                    if (deleteFriendModal && deleteFriendModal.classList.contains("show")) {
+                        confirmDeleteFriend();
+                        return;
+                    }
+                    const deleteUserModal = document.getElementById("deleteUserModal");
+                    if (deleteUserModal && deleteUserModal.classList.contains("show")) {
+                        confirmDeleteUser();
+                        return;
+                    }
+                    const friendSuccessModal = document.getElementById("friendSuccessModal");
+                    if (friendSuccessModal && friendSuccessModal.classList.contains("show")) {
+                        closeFriendSuccessModal();
+                        return;
+                    }
+                    const mainActionModal = document.getElementById("mainActionConfirmModal");
+                    if (mainActionModal && mainActionModal.classList.contains("show")) {
+                        confirmMainAction();
+                        return;
+                    }
+                    const logoutModal = document.getElementById("logoutConfirmModal");
+                    if (logoutModal && logoutModal.classList.contains("show")) {
+                        logout();
+                        return;
+                    }
                     // Prevent form submission if any input is focused
                     const activeElement = document.activeElement;
                     if (
@@ -1292,71 +2138,55 @@
                     return;
                 }
 
+                const personOptions = [];
+                for (let i = 1; i <= splitCount; i++) {
+                    personOptions.push(
+                        `<option value="${i}">${getPersonDisplayName(i)}</option>`,
+                    );
+                }
+
                 let html = '<div class="person-inputs-wrapper">';
                 html += '<h3 class="person-inputs-title">Item per Orang:</h3>';
-
-                for (let i = 1; i <= splitCount; i++) {
-                    html += `
-                    <div class="person-input-card" data-person="${i}">
-                        <div class="person-input-header">
-                            <span class="person-badge" id="person${i}Badge">Orang ${i}</span>
-                            <input type="text" id="person${i}Label" placeholder="Nama orang" oninput="updatePersonBadge(${i})" style="margin-left: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd;" />
+                html += `
+                    <div class="person-input-card">
+                        <div class="input-group-sm person-target-row">
+                            <label for="personItemTarget">Teman:</label>
+                            <select id="personItemTarget">${personOptions.join("")}</select>
                         </div>
                         <div class="person-input-fields">
                             <div class="input-group-sm">
-                                <label for="person${i}Name">Nama Barang:</label>
-                                <input type="text" id="person${i}Name" placeholder="Nama barang" />
+                                <label for="personItemName">Nama Barang:</label>
+                                <input type="text" id="personItemName" placeholder="Nama barang" />
                             </div>
                             <div class="input-group-sm">
-                                <label for="person${i}Price">Harga:</label>
-                                <input type="text" id="person${i}Price" placeholder="Rp 0" oninput="formatRupiah(this)" />
+                                <label for="personItemPrice">Harga:</label>
+                                <input type="text" id="personItemPrice" placeholder="Rp 0" oninput="formatRupiah(this)" />
                             </div>
                             <div class="input-group-sm">
-                                <label for="person${i}Quantity">Qty:</label>
-                                <input type="number" id="person${i}Quantity" placeholder="1" min="1" value="1" />
+                                <label for="personItemQuantity">Qty:</label>
+                                <input type="number" id="personItemQuantity" placeholder="1" min="1" value="1" />
                             </div>
                         </div>
-                        <button class="btn-add-person-full" onclick="addPersonItem(${i})">Tambah Item Orang ${i}</button>
+                        <div class="person-submit-row">
+                            <button type="button" class="btn-add btn-add-green" onclick="addPersonItem()">Tambah Item</button>
+                        </div>
                     </div>
-                    `;
-                }
-
+                `;
                 html += "</div>";
                 container.innerHTML = html;
             }
 
-            // Update person badge when name is entered
-            function updatePersonBadge(personNumber) {
-                const labelInput = document.getElementById(
-                    `person${personNumber}Label`,
-                );
-                const badge = document.getElementById(
-                    `person${personNumber}Badge`,
-                );
-                const name = labelInput.value.trim();
-                const displayName = name || `Orang ${personNumber}`;
-                badge.textContent = displayName;
-
-                // Update personName in all existing items for this person
-                items.forEach((item) => {
-                    if (item.person === personNumber) {
-                        item.personName = displayName;
-                    }
-                });
-                renderTable();
-            }
-
             // Add item for specific person
-            function addPersonItem(personNumber) {
-                const suffix = personNumber;
-                const name = document
-                    .getElementById(`person${suffix}Name`)
-                    .value.trim();
+            function addPersonItem() {
+                const personNumber =
+                    parseInt(document.getElementById("personItemTarget").value, 10) ||
+                    1;
+                const name = document.getElementById("personItemName").value.trim();
                 const price = parseFormattedNumber(
-                    document.getElementById(`person${suffix}Price`).value,
+                    document.getElementById("personItemPrice").value,
                 );
                 const quantity = parseInt(
-                    document.getElementById(`person${suffix}Quantity`).value,
+                    document.getElementById("personItemQuantity").value,
                 );
 
                 if (!name) {
@@ -1374,11 +2204,7 @@
                     return;
                 }
 
-                const labelInput = document.getElementById(
-                    `person${suffix}Label`,
-                );
-                const personName =
-                    labelInput.value.trim() || `Orang ${personNumber}`;
+                const personName = getPersonDisplayName(personNumber);
 
                 const item = {
                     id: Date.now() + Math.random(),
@@ -1393,15 +2219,487 @@
 
                 items.push(item);
 
-                document.getElementById(`person${suffix}Name`).value = "";
-                document.getElementById(`person${suffix}Price`).value = "";
-                document.getElementById(`person${suffix}Quantity`).value = "1";
+                document.getElementById("personItemName").value = "";
+                document.getElementById("personItemPrice").value = "";
+                document.getElementById("personItemQuantity").value = "1";
 
-                document.getElementById(`person${suffix}Name`).focus();
+                document.getElementById("personItemName").focus();
 
                 renderTable();
                 calculateTotal();
             }
+
+            async function savePersonToDb() {
+                const personNameInput = document.getElementById('personName');
+                const newPersonNameInput = document.getElementById('newPersonName');
+                const rekeningInput = document.getElementById('personRekening');
+                const nama = (personNameInput?.value || newPersonNameInput?.value || '').trim();
+                const noRekening = (rekeningInput?.value || '').trim();
+                
+                if (!nama) {
+                    alert('Nama tidak boleh kosong!');
+                    return;
+                }
+                if (!noRekening) {
+                    alert('Nomor rekening tidak boleh kosong!');
+                    return;
+                }
+                const isDuplicateName = peopleCache.some(
+                    (person) =>
+                        String(person.nama || '').trim().toLowerCase() ===
+                        nama.toLowerCase(),
+                );
+                if (isDuplicateName) {
+                    alert('Nama teman sudah ada!');
+                    return;
+                }
+                
+                try {
+                    showLoading('Menyimpan data...');
+                    const response = await apiFetch('/api/people', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nama, no_rekening: noRekening })
+                    });
+                    if (!response.ok) {
+                        const errBody = await response.json();
+                        throw new Error(errBody.error || 'Request gagal');
+                    }
+                    const result = await response.json();
+                    if (result.id) {
+                        if (personNameInput) {
+                            personNameInput.value = '';
+                        }
+                        if (rekeningInput) {
+                            rekeningInput.value = '';
+                        }
+                        if (newPersonNameInput) {
+                            newPersonNameInput.value = '';
+                        }
+                        await loadPeopleFromDb();
+                        openFriendSuccessModal('Teman berhasil ditambahkan.');
+                    }
+                } catch (err) {
+                    alert('Gagal menyimpan: ' + err.message);
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            function savePerson() {
+                savePersonToDb();
+            }
+
+            function openAddFriendModal() {
+                const modal = document.getElementById('addFriendModal');
+                modal.classList.add('show');
+                loadPeopleFromDb();
+                const nameInput = document.getElementById('newPersonName');
+                if (nameInput) {
+                    nameInput.focus();
+                }
+            }
+
+            function closeAddFriendModal() {
+                const modal = document.getElementById('addFriendModal');
+                modal.classList.remove('show');
+            }
+
+            function handleAddFriendModalBackdrop(event) {
+                if (event.target.id === 'addFriendModal') {
+                    closeAddFriendModal();
+                }
+            }
+
+            async function openAdminUsersModal() {
+                if (String(currentUser?.role || '').toLowerCase() !== 'admin') {
+                    return;
+                }
+                const modal = document.getElementById('adminUsersModal');
+                modal.classList.add('show');
+                await loadAdminUsers();
+            }
+
+            function closeAdminUsersModal() {
+                const modal = document.getElementById('adminUsersModal');
+                if (modal) {
+                    modal.classList.remove('show');
+                }
+            }
+
+            function handleAdminUsersModalBackdrop(event) {
+                if (event.target.id === 'adminUsersModal') {
+                    closeAdminUsersModal();
+                }
+            }
+
+            async function loadAdminUsers() {
+                try {
+                    const response = await apiFetch('/api/users');
+                    const users = await response.json();
+                    if (!response.ok) {
+                        throw new Error(users.error || 'Gagal memuat daftar user');
+                    }
+                    adminUsersCache = (Array.isArray(users) ? users : []).filter(
+                        (user) => String(user.role || '').toLowerCase() !== 'admin',
+                    );
+                    renderAdminUsersList(adminUsersCache);
+                } catch (err) {
+                    alert('Gagal memuat user: ' + err.message);
+                }
+            }
+
+            function renderAdminUsersList(users) {
+                const listContainer = document.getElementById('adminUsersList');
+                if (!listContainer) {
+                    return;
+                }
+                listContainer.innerHTML = '';
+
+                if (!Array.isArray(users) || users.length === 0) {
+                    listContainer.innerHTML =
+                        '<div class="friend-list-empty">Tidak ada user non-admin.</div>';
+                    return;
+                }
+
+                users.forEach((user) => {
+                    const row = document.createElement('div');
+                    row.className = 'friend-list-item';
+
+                    const info = document.createElement('div');
+                    const username = document.createElement('div');
+                    username.className = 'friend-list-name';
+                    username.textContent = user.username || '-';
+
+                    const role = document.createElement('div');
+                    role.className = 'friend-list-rekening';
+                    role.textContent = `Role: ${user.role || 'user'}`;
+
+                    info.appendChild(username);
+                    info.appendChild(role);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-reset friend-delete-btn';
+                    deleteBtn.type = 'button';
+                    deleteBtn.textContent = 'Hapus';
+                    deleteBtn.onclick = () => openDeleteUserModal(user.id, user.username);
+
+                    row.appendChild(info);
+                    row.appendChild(deleteBtn);
+                    listContainer.appendChild(row);
+                });
+            }
+
+            function openDeleteUserModal(userId, username) {
+                pendingDeleteUser = {
+                    id: userId,
+                    username: username || 'user ini',
+                };
+                const message = document.getElementById('deleteUserMessage');
+                if (message) {
+                    message.textContent = `Yakin ingin menghapus user ${pendingDeleteUser.username}?`;
+                }
+                const modal = document.getElementById('deleteUserModal');
+                modal.classList.add('show');
+            }
+
+            function closeDeleteUserModal() {
+                const modal = document.getElementById('deleteUserModal');
+                if (modal) {
+                    modal.classList.remove('show');
+                }
+                pendingDeleteUser = null;
+            }
+
+            function handleDeleteUserModalBackdrop(event) {
+                if (event.target.id === 'deleteUserModal') {
+                    closeDeleteUserModal();
+                }
+            }
+
+            async function confirmDeleteUser() {
+                if (!pendingDeleteUser || !pendingDeleteUser.id) {
+                    return;
+                }
+                const userId = pendingDeleteUser.id;
+                const username = pendingDeleteUser.username;
+
+                try {
+                    showLoading('Menghapus data...');
+                    const response = await apiFetch(`/api/users/${userId}`, {
+                        method: 'DELETE',
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Gagal menghapus user');
+                    }
+
+                    adminUsersCache = adminUsersCache.filter(
+                        (user) => Number(user.id) !== Number(userId),
+                    );
+                    renderAdminUsersList(adminUsersCache);
+                    closeDeleteUserModal();
+                    openFriendSuccessModal(`User ${username} berhasil dihapus.`);
+                } catch (err) {
+                    alert('Gagal menghapus user: ' + err.message);
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            async function loadPeopleFromDb() {
+                try {
+                    const response = await apiFetch('/api/people');
+                    const people = await response.json();
+                    peopleCache = Array.isArray(people) ? people : [];
+                    renderFriendsList(peopleCache);
+                    renderAssignFriendsFields();
+                } catch (err) {
+                    console.error('Gagal memuat orang:', err);
+                }
+            }
+
+            async function openAssignFriendsModal(splitCount) {
+                if (splitCount <= 1) {
+                    closeAssignFriendsModal();
+                    return;
+                }
+
+                if (!peopleCache.length) {
+                    await loadPeopleFromDb();
+                }
+
+                renderAssignFriendsFields(splitCount);
+                const modal = document.getElementById('assignFriendsModal');
+                modal.classList.add('show');
+            }
+
+            function closeAssignFriendsModal() {
+                const modal = document.getElementById('assignFriendsModal');
+                modal.classList.remove('show');
+            }
+
+            function handleAssignFriendsModalBackdrop(event) {
+                if (event.target.id === 'assignFriendsModal') {
+                    closeAssignFriendsModal();
+                }
+            }
+
+            function renderAssignFriendsFields(forcedSplitCount) {
+                const splitCount =
+                    forcedSplitCount ||
+                    parseInt(document.getElementById('splitCount').value) ||
+                    1;
+                const container = document.getElementById('assignFriendsFields');
+                if (!container || splitCount <= 1) {
+                    if (container) {
+                        container.innerHTML = '';
+                    }
+                    return;
+                }
+
+                container.innerHTML = '';
+
+                for (let i = 1; i <= splitCount; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'assign-friend-row';
+
+                    const label = document.createElement('label');
+                    label.textContent = `Orang ${i}`;
+                    label.setAttribute('for', `assignFriendSelect${i}`);
+
+                    const select = document.createElement('select');
+                    select.className = 'assign-friend-select';
+                    select.id = `assignFriendSelect${i}`;
+                    select.dataset.personIndex = String(i);
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = '-- Pilih teman --';
+                    select.appendChild(defaultOption);
+
+                    peopleCache.forEach((person) => {
+                        const option = document.createElement('option');
+                        option.value = String(person.id);
+                        option.textContent = person.nama;
+                        select.appendChild(option);
+                    });
+
+                    const existingSelection = selectedSplitPeople.find(
+                        (person) => person.personIndex === i,
+                    );
+                    if (existingSelection && existingSelection.friendId) {
+                        select.value = String(existingSelection.friendId);
+                    }
+
+                    row.appendChild(label);
+                    row.appendChild(select);
+                    container.appendChild(row);
+                }
+            }
+
+            function applySelectedFriendsFromModal() {
+                const splitCount =
+                    parseInt(document.getElementById('splitCount').value) || 1;
+                selectedSplitPeople = [];
+                for (let i = 1; i <= splitCount; i++) {
+                    const select = document.getElementById(`assignFriendSelect${i}`);
+                    const selectedId = select ? select.value : '';
+                    const selectedPerson = peopleCache.find(
+                        (person) => String(person.id) === selectedId,
+                    );
+                    selectedSplitPeople.push({
+                        personIndex: i,
+                        friendId: selectedId ? Number(selectedId) : null,
+                        name: selectedPerson ? selectedPerson.nama : `Orang ${i}`,
+                    });
+                }
+
+                generatePersonInputs();
+                for (let i = 1; i <= splitCount; i++) {
+                    const displayName = getPersonDisplayName(i);
+                    items.forEach((item) => {
+                        if (item.person === i) {
+                            item.personName = displayName;
+                        }
+                    });
+                }
+                closeAssignFriendsModal();
+                renderTable();
+                calculateTotal();
+            }
+
+            function renderFriendsList(people) {
+                const listContainer = document.getElementById('friendsList');
+                if (!listContainer) {
+                    return;
+                }
+
+                listContainer.innerHTML = '';
+
+                if (!Array.isArray(people) || people.length === 0) {
+                    listContainer.innerHTML = '<div class="friend-list-empty">Belum ada teman tersimpan.</div>';
+                    return;
+                }
+
+                people.forEach((person) => {
+                    const row = document.createElement('div');
+                    row.className = 'friend-list-item';
+
+                    const info = document.createElement('div');
+                    const name = document.createElement('div');
+                    name.className = 'friend-list-name';
+                    name.textContent = person.nama || '-';
+
+                    const rekening = document.createElement('div');
+                    rekening.className = 'friend-list-rekening';
+                    rekening.textContent = person.no_rekening || '-';
+
+                    info.appendChild(name);
+                    info.appendChild(rekening);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-reset friend-delete-btn';
+                    deleteBtn.textContent = 'Hapus';
+                    deleteBtn.type = 'button';
+                    deleteBtn.onclick = () => openDeleteFriendModal(person.id, person.nama);
+
+                    row.appendChild(info);
+                    row.appendChild(deleteBtn);
+                    listContainer.appendChild(row);
+                });
+            }
+
+            function openDeleteFriendModal(personId, personName) {
+                pendingDeleteFriend = {
+                    id: personId,
+                    name: personName || 'teman ini',
+                };
+                const message = document.getElementById('deleteFriendMessage');
+                if (message) {
+                    message.textContent = `Yakin ingin menghapus ${pendingDeleteFriend.name}?`;
+                }
+                const modal = document.getElementById('deleteFriendModal');
+                modal.classList.add('show');
+            }
+
+            function closeDeleteFriendModal() {
+                const modal = document.getElementById('deleteFriendModal');
+                modal.classList.remove('show');
+                pendingDeleteFriend = null;
+            }
+
+            function handleDeleteFriendModalBackdrop(event) {
+                if (event.target.id === 'deleteFriendModal') {
+                    closeDeleteFriendModal();
+                }
+            }
+
+            function openFriendSuccessModal(message) {
+                const messageElement = document.getElementById('friendSuccessMessage');
+                if (messageElement) {
+                    messageElement.textContent = message || 'Berhasil.';
+                }
+                const modal = document.getElementById('friendSuccessModal');
+                modal.classList.add('show');
+            }
+
+            function closeFriendSuccessModal() {
+                const modal = document.getElementById('friendSuccessModal');
+                modal.classList.remove('show');
+            }
+
+            function handleFriendSuccessModalBackdrop(event) {
+                if (event.target.id === 'friendSuccessModal') {
+                    closeFriendSuccessModal();
+                }
+            }
+
+            async function confirmDeleteFriend() {
+                if (!pendingDeleteFriend || !pendingDeleteFriend.id) {
+                    return;
+                }
+                const personId = pendingDeleteFriend.id;
+
+                try {
+                    showLoading('Menghapus data...');
+                    const response = await apiFetch(`/api/people/${personId}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (!response.ok) {
+                        const errBody = await response.json();
+                        throw new Error(errBody.error || 'Gagal menghapus teman');
+                    }
+
+                    await loadPeopleFromDb();
+                    closeDeleteFriendModal();
+                    pendingDeleteFriend = null;
+                    openFriendSuccessModal('Teman berhasil dihapus.');
+                } catch (err) {
+                    alert('Gagal menghapus: ' + err.message);
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                checkAuthOnLoad();
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeAddFriendModal();
+                    closeAdminUsersModal();
+                    closeAssignFriendsModal();
+                    closeDeleteFriendModal();
+                    closeDeleteUserModal();
+                    closeFriendSuccessModal();
+                    closeMainActionConfirmModal();
+                    closeLogoutConfirmModal();
+                    closeSplitWarningModal();
+                }
+            });
         </script>
     </body>
 </html>
