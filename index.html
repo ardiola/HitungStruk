@@ -1447,6 +1447,7 @@
                 }
 
                 try {
+                    showLoading('Login...');
                     const response = await fetch('/api/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1463,6 +1464,8 @@
                     await loadPeopleFromDb();
                 } catch (err) {
                     showLoginOverlay(err.message);
+                } finally {
+                    hideLoading();
                 }
             }
 
@@ -1488,6 +1491,7 @@
                 }
 
                 try {
+                    showLoading('Mendaftarkan akun...');
                     const response = await fetch('/api/auth/register', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1502,6 +1506,8 @@
                     showLoginOverlay('Daftar berhasil. Silakan login.');
                 } catch (err) {
                     showLoginOverlay(err.message);
+                } finally {
+                    hideLoading();
                 }
             }
 
@@ -1536,8 +1542,11 @@
             async function logout() {
                 closeLogoutConfirmModal();
                 try {
+                    showLoading('Logout...');
                     await apiFetch('/api/auth/logout', { method: 'POST' });
                 } catch (err) {
+                } finally {
+                    hideLoading();
                 }
                 setAuthToken('');
                 setCurrentUser(null);
