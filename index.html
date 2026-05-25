@@ -3115,7 +3115,7 @@
                 modal.classList.add("show");
                 loadPeopleFromDb();
                 const nameInput = document.getElementById("newPersonName");
-                if (nameInput) {
+                if (nameInput && !isMobileLayout()) {
                     nameInput.focus();
                 }
             }
