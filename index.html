@@ -32,7 +32,7 @@
                 position: fixed;
                 inset: 0;
                 background: rgba(15, 23, 42, 0.45);
-                display: flex;
+                display: none;
                 align-items: center;
                 justify-content: center;
                 z-index: 3000;
@@ -215,12 +215,62 @@
                 justify-content: center;
             }
 
+            .print-export-dropdown {
+                display: none;
+                min-width: 220px;
+                padding: 12px 42px 12px 14px;
+                border: 1px solid #ced4da;
+                border-radius: 10px;
+                font-size: 16px;
+                background: #fff;
+                color: #2c3e50;
+                font-weight: 600;
+                appearance: none;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                cursor: pointer;
+                transition:
+                    border-color 0.2s,
+                    box-shadow 0.2s;
+            }
+
+            .print-export-dropdown:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+            }
+
+            .print-export-wrap {
+                display: none;
+                position: relative;
+                width: 100%;
+            }
+
+            .print-export-wrap::after {
+                content: "▾";
+                position: absolute;
+                right: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #667085;
+                font-size: 14px;
+                pointer-events: none;
+            }
+
             .btn-print {
                 background-color: #27ae60;
             }
 
             .btn-print:hover {
                 background-color: #219a52;
+            }
+
+            .btn-image {
+                background-color: #8e44ad;
+            }
+
+            .btn-image:hover {
+                background-color: #7d3c98;
             }
 
             .btn-reset {
@@ -235,6 +285,10 @@
                 width: 100%;
                 border-collapse: collapse;
                 margin-top: 20px;
+            }
+
+            .items-table-wrap {
+                width: 100%;
             }
 
             th,
@@ -580,6 +634,11 @@
             .person-submit-row .btn-add {
                 width: 100%;
                 grid-column: auto;
+                background-color: #2563eb;
+            }
+
+            .person-submit-row .btn-add:hover {
+                background-color: #1d4ed8;
             }
 
             .modal-overlay {
@@ -620,6 +679,25 @@
                 gap: 10px;
                 justify-content: flex-end;
                 margin-top: 12px;
+            }
+
+            .warning-modal-content {
+                border: 1px solid #ffe0b2;
+                box-shadow: 0 10px 28px rgba(245, 124, 0, 0.2);
+            }
+
+            .warning-badge {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background: #fff3e0;
+                color: #ef6c00;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 20px;
+                margin-bottom: 10px;
             }
 
             .loading-card {
@@ -704,12 +782,29 @@
                 text-align: center;
             }
 
+            .friend-list-loading {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 14px 12px;
+                color: #4b5563;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .friend-list-loading .loading-spinner {
+                width: 16px;
+                height: 16px;
+                border-width: 2px;
+            }
+
             .assign-friends-fields {
-                margin-top: 10px;
+                margin-top: 8px;
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
-                max-height: 280px;
+                gap: 8px;
+                max-height: 200px;
                 overflow-y: auto;
                 padding-right: 2px;
             }
@@ -717,12 +812,12 @@
             .assign-friend-row {
                 display: grid;
                 grid-template-columns: 95px 1fr;
-                gap: 10px;
+                gap: 8px;
                 align-items: center;
                 background: #f7faff;
                 border: 1px solid #dce9ff;
                 border-radius: 8px;
-                padding: 10px 12px;
+                padding: 8px 10px;
             }
 
             .assign-friend-row label {
@@ -740,13 +835,13 @@
             }
 
             .assign-modal-content {
-                max-width: 540px;
+                max-width: 420px;
                 padding: 0;
                 overflow: hidden;
             }
 
             .assign-modal-header {
-                padding: 16px 20px;
+                padding: 12px 16px;
                 background: linear-gradient(135deg, #eef5ff 0%, #dfeeff 100%);
                 border-bottom: 1px solid #d2e5ff;
             }
@@ -757,18 +852,18 @@
             }
 
             .assign-modal-subtitle {
-                margin: 6px 0 0 0;
-                font-size: 13px;
+                margin: 4px 0 0 0;
+                font-size: 12px;
                 color: #4c6488;
             }
 
             .assign-modal-body {
-                padding: 16px 20px 12px;
+                padding: 12px 16px 10px;
             }
 
             .assign-modal-actions {
-                margin-top: 14px;
-                padding-top: 12px;
+                margin-top: 8px;
+                padding-top: 8px;
                 border-top: 1px solid #e8eef7;
             }
 
@@ -871,6 +966,85 @@
 
                 .btn-actions {
                     flex-direction: column;
+                }
+
+                .btn-actions .btn-print,
+                .btn-actions .btn-image {
+                    display: none;
+                }
+
+                .print-export-dropdown {
+                    display: block;
+                    width: 100%;
+                    min-height: 46px;
+                    font-size: 15px;
+                    background: linear-gradient(
+                        180deg,
+                        #ffffff 0%,
+                        #f9fbff 100%
+                    );
+                }
+
+                .print-export-wrap {
+                    display: block;
+                }
+
+                .items-table-wrap {
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    border: 1px solid #e3e8f1;
+                    border-radius: 8px;
+                    background: #fff;
+                }
+
+                #itemsTable {
+                    min-width: 620px;
+                    margin-top: 0;
+                }
+
+                #itemsTable th,
+                #itemsTable td {
+                    padding: 10px 8px;
+                    white-space: nowrap;
+                }
+
+                .person-inputs-wrapper {
+                    margin: 16px 0;
+                    padding: 12px;
+                    border-radius: 8px;
+                }
+
+                .person-inputs-title {
+                    margin-bottom: 10px;
+                    font-size: 1em;
+                }
+
+                .person-input-card {
+                    padding: 12px;
+                    margin-bottom: 10px;
+                    border-radius: 8px;
+                }
+
+                .person-target-row {
+                    margin-bottom: 8px;
+                }
+
+                .person-target-row label {
+                    margin-bottom: 4px;
+                }
+
+                .input-group-sm input,
+                .input-group-sm select {
+                    min-height: 42px;
+                    font-size: 16px;
+                }
+
+                .person-submit-row {
+                    margin-top: 8px;
+                }
+
+                .person-submit-row .btn-add {
+                    min-height: 44px;
                 }
             }
 
@@ -977,6 +1151,85 @@
                     font-weight: bold;
                     color: #27ae60;
                 }
+            }
+
+            .image-export-capture {
+                position: fixed;
+                left: -10000px;
+                top: 0;
+                width: 794px;
+                background: #fff;
+                z-index: -1;
+            }
+
+            .image-export-capture .container {
+                box-shadow: none;
+                padding: 10px;
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            .image-export-capture h1,
+            .image-export-capture .input-section,
+            .image-export-capture .person-inputs-wrapper,
+            .image-export-capture .btn-actions,
+            .image-export-capture .format-info,
+            .image-export-capture .summary-input-wide,
+            .image-export-capture .summary-input-wide > .input-wrapper,
+            .image-export-capture .summary-input,
+            .image-export-capture .summary-input > .input-wrapper {
+                display: none !important;
+            }
+
+            .image-export-capture #itemsTable,
+            .image-export-capture .summary,
+            .image-export-capture .person-bills-section {
+                display: block !important;
+            }
+
+            .image-export-capture #itemsTable {
+                width: 100% !important;
+                margin-top: 20px;
+            }
+
+            .image-export-capture #itemsTable th,
+            .image-export-capture #itemsTable td {
+                padding: 8px;
+                border: 1px solid #ddd;
+            }
+
+            .image-export-capture #itemsTable th {
+                background-color: #f5f5f5;
+                font-weight: bold;
+            }
+
+            .image-export-capture #itemsTable td:last-child,
+            .image-export-capture #itemsTable th:last-child {
+                display: none !important;
+            }
+
+            .image-export-capture .summary-row-display {
+                display: flex !important;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                font-weight: bold;
+                padding: 8px 0;
+            }
+
+            .image-export-capture .summary-total {
+                font-size: 1.2em;
+                color: #27ae60;
+                border-top: 2px solid #bdc3c7;
+                padding-top: 10px;
+                margin-top: 15px;
+            }
+
+            .image-export-capture .person-bills-section {
+                margin-top: 20px;
+                padding: 15px;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
             }
         </style>
     </head>
@@ -1152,27 +1405,46 @@
                 <!-- Person-specific input sections will be generated here when splitCount > 1 -->
             </div>
 
-            <table id="itemsTable">
-                <thead>
-                    <tr>
-                        <th>Nama Barang</th>
-                        <th>Harga Satuan</th>
-                        <th>Jumlah</th>
-                        <th>Subtotal</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Items will be added here dynamically -->
-                </tbody>
-            </table>
+            <div class="items-table-wrap">
+                <table id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th>Nama Barang</th>
+                            <th>Harga Satuan</th>
+                            <th>Jumlah</th>
+                            <th>Subtotal</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Items will be added here dynamically -->
+                    </tbody>
+                </table>
+            </div>
 
             <div class="btn-actions">
+                <div class="print-export-wrap">
+                    <select
+                        id="printExportSelect"
+                        class="print-export-dropdown"
+                        onchange="handlePrintExportSelect(this.value)"
+                    >
+                        <option value="">Pilih Cetak / Gambar</option>
+                        <option value="print">Cetak</option>
+                        <option value="image">Simpan Gambar</option>
+                    </select>
+                </div>
                 <button
                     class="btn-print"
                     onclick="openMainActionConfirmModal('print')"
                 >
                     Cetak
+                </button>
+                <button
+                    class="btn-image"
+                    onclick="openMainActionConfirmModal('image')"
+                >
+                    Simpan Gambar
                 </button>
                 <button
                     class="btn-reset"
@@ -1541,9 +1813,15 @@
                 class="modal-overlay"
                 onclick="handleSplitWarningModalBackdrop(event)"
             >
-                <div class="modal-content">
-                    <h3 class="modal-title">Peringatan</h3>
-                    <p style="margin: 0; color: #2c3e50">
+                <div class="modal-content warning-modal-content">
+                    <div class="warning-badge">!</div>
+                    <h3 id="splitWarningTitle" class="modal-title">
+                        Peringatan
+                    </h3>
+                    <p
+                        id="splitWarningMessage"
+                        style="margin: 0; color: #2c3e50"
+                    >
                         Item belum ada di tabel. Tambahkan item terlebih dahulu
                         sebelum menerapkan jumlah orang.
                     </p>
@@ -1568,6 +1846,7 @@
             </div>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
         <script>
             // Array to store items
             let items = [];
@@ -1596,6 +1875,10 @@
                 updateAdminUsersButtonVisibility();
             }
 
+            function isMobileLayout() {
+                return window.matchMedia("(max-width: 600px)").matches;
+            }
+
             function updateAdminUsersButtonVisibility() {
                 const button = document.getElementById("adminUsersButton");
                 const group = document.getElementById("adminUsersGroup");
@@ -1608,7 +1891,8 @@
                     String(currentUser?.role || "").toLowerCase() === "admin";
                 button.style.display = isAdmin ? "block" : "none";
                 if (group) {
-                    group.style.display = isAdmin ? "flex" : "none";
+                    group.style.display =
+                        isAdmin && !isMobileLayout() ? "flex" : "none";
                 }
                 if (mobileAdminAction) {
                     mobileAdminAction.style.display = isAdmin
@@ -1631,6 +1915,19 @@
                     return;
                 }
                 menu.classList.remove("show");
+            }
+
+            function renderListLoading(containerId, message) {
+                const listContainer = document.getElementById(containerId);
+                if (!listContainer) {
+                    return;
+                }
+                listContainer.innerHTML = `
+                    <div class="friend-list-loading">
+                        <span class="loading-spinner"></span>
+                        <span>${message || "Memuat data..."}</span>
+                    </div>
+                `;
             }
 
             function handleMobileAction(action) {
@@ -1899,13 +2196,15 @@
             }
 
             async function checkAuthOnLoad() {
-                if (!authToken) {
-                    setAuthMode("login");
-                    showLoginOverlay();
-                    return;
-                }
-
                 try {
+                    showLoading("Memuat aplikasi...");
+                    if (!authToken) {
+                        setCurrentUser(null);
+                        setAuthMode("login");
+                        showLoginOverlay();
+                        return;
+                    }
+
                     const response = await apiFetch("/api/auth/me");
                     const result = await response.json();
                     if (!response.ok) {
@@ -1922,6 +2221,8 @@
                     setCurrentUser(null);
                     setAuthMode("login");
                     showLoginOverlay("Gagal memeriksa sesi login.");
+                } finally {
+                    hideLoading();
                 }
             }
 
@@ -1995,7 +2296,10 @@
 
                 // Validation
                 if (!name) {
-                    alert(`${nameLabel} tidak boleh kosong!`);
+                    openWarningModal(
+                        "Item Kosong",
+                        `${nameLabel} tidak boleh kosong!`,
+                    );
                     return;
                 }
 
@@ -2035,6 +2339,11 @@
                 // Update table and totals
                 renderTable();
                 calculateTotal();
+                openFriendSuccessModal(
+                    isTax
+                        ? "Pajak berhasil ditambahkan."
+                        : "Item berhasil ditambahkan.",
+                );
             }
 
             // Remove item from the list
@@ -2062,11 +2371,11 @@
                     }
 
                     row.innerHTML = `
-                    <td>${nameDisplay}</td>
-                    <td>${formatNumber(item.price)}</td>
-                    <td>${item.quantity}</td>
-                    <td>${formatNumber(item.subtotal)}</td>
-                    <td>
+                    <td data-label="Nama">${nameDisplay}</td>
+                    <td data-label="Harga">${formatNumber(item.price)}</td>
+                    <td data-label="Jumlah">${item.quantity}</td>
+                    <td data-label="Subtotal">${formatNumber(item.subtotal)}</td>
+                    <td data-label="Aksi">
                         <button class="actions-btn" onclick="removeItem(${item.id})">Hapus</button>
                     </td>
                     `;
@@ -2355,6 +2664,24 @@
             }
 
             function openSplitWarningModal() {
+                openWarningModal(
+                    "Peringatan",
+                    "Item belum ada di tabel. Tambahkan item terlebih dahulu sebelum menerapkan jumlah orang.",
+                );
+            }
+
+            function openWarningModal(title, message) {
+                const titleElement =
+                    document.getElementById("splitWarningTitle");
+                const messageElement = document.getElementById(
+                    "splitWarningMessage",
+                );
+                if (titleElement) {
+                    titleElement.textContent = title || "Peringatan";
+                }
+                if (messageElement) {
+                    messageElement.textContent = message || "";
+                }
                 const modal = document.getElementById("splitWarningModal");
                 modal.classList.add("show");
             }
@@ -2370,7 +2697,24 @@
                 }
             }
 
+            function validateTableHasItemsForOutput() {
+                if (items.length > 0) {
+                    return true;
+                }
+                openWarningModal(
+                    "Item Kosong",
+                    "Tambahkan item terlebih dahulu sebelum cetak atau simpan gambar.",
+                );
+                return false;
+            }
+
             function openMainActionConfirmModal(action) {
+                if (
+                    (action === "print" || action === "image") &&
+                    !validateTableHasItemsForOutput()
+                ) {
+                    return;
+                }
                 pendingMainAction = action;
                 const title = document.getElementById("mainActionConfirmTitle");
                 const message = document.getElementById(
@@ -2386,6 +2730,12 @@
                         "Apakah Anda yakin ingin mencetak struk ini?";
                     confirmButton.textContent = "Cetak";
                     confirmButton.className = "btn-print";
+                } else if (action === "image") {
+                    title.textContent = "Konfirmasi Simpan Gambar";
+                    message.textContent =
+                        "Apakah Anda yakin ingin menyimpan struk sebagai gambar?";
+                    confirmButton.textContent = "Simpan Gambar";
+                    confirmButton.className = "btn-image";
                 } else {
                     title.textContent = "Konfirmasi Reset";
                     message.textContent =
@@ -2410,11 +2760,87 @@
                 }
             }
 
-            function confirmMainAction() {
+            function handlePrintExportSelect(action) {
+                if (!action) {
+                    return;
+                }
+                openMainActionConfirmModal(action);
+                const select = document.getElementById("printExportSelect");
+                if (select) {
+                    select.value = "";
+                }
+            }
+
+            async function exportStrukAsImage() {
+                if (typeof window.html2canvas !== "function") {
+                    alert("Fitur simpan gambar belum tersedia.");
+                    return;
+                }
+
+                const sourceContainer = document.getElementById("appContainer");
+                if (!sourceContainer) {
+                    alert("Area struk tidak ditemukan.");
+                    return;
+                }
+
+                let captureWrapper = null;
+                try {
+                    showLoading("Membuat gambar...");
+
+                    captureWrapper = document.createElement("div");
+                    captureWrapper.className = "image-export-capture";
+
+                    const captureTarget = sourceContainer.cloneNode(true);
+                    captureTarget.style.display = "block";
+                    captureTarget.removeAttribute("id");
+                    captureWrapper.appendChild(captureTarget);
+                    document.body.appendChild(captureWrapper);
+
+                    await new Promise((resolve) =>
+                        requestAnimationFrame(() =>
+                            requestAnimationFrame(resolve),
+                        ),
+                    );
+
+                    const canvas = await window.html2canvas(captureTarget, {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: "#ffffff",
+                    });
+                    const link = document.createElement("a");
+                    link.href = canvas.toDataURL("image/jpeg", 0.95);
+                    link.download = `struk-${Date.now()}.jpeg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    openFriendSuccessModal(
+                        "Gambar struk (JPEG) berhasil diunduh.",
+                    );
+                } catch (err) {
+                    alert("Gagal membuat gambar: " + err.message);
+                } finally {
+                    if (captureWrapper && captureWrapper.parentNode) {
+                        captureWrapper.parentNode.removeChild(captureWrapper);
+                    }
+                    hideLoading();
+                }
+            }
+
+            async function confirmMainAction() {
                 const action = pendingMainAction;
                 closeMainActionConfirmModal();
                 if (action === "print") {
+                    if (!validateTableHasItemsForOutput()) {
+                        return;
+                    }
                     window.print();
+                    return;
+                }
+                if (action === "image") {
+                    if (!validateTableHasItemsForOutput()) {
+                        return;
+                    }
+                    await exportStrukAsImage();
                     return;
                 }
                 if (action === "reset") {
@@ -2574,7 +3000,10 @@
                 );
 
                 if (!name) {
-                    alert("Nama barang tidak boleh kosong!");
+                    openWarningModal(
+                        "Item Kosong",
+                        "Nama barang tidak boleh kosong!",
+                    );
                     return;
                 }
 
@@ -2611,6 +3040,7 @@
 
                 renderTable();
                 calculateTotal();
+                openFriendSuccessModal("Item berhasil ditambahkan.");
             }
 
             async function savePersonToDb() {
@@ -2724,6 +3154,7 @@
             }
 
             async function loadAdminUsers() {
+                renderListLoading("adminUsersList", "Memuat daftar user...");
                 try {
                     const response = await apiFetch("/api/users");
                     const users = await response.json();
@@ -2740,6 +3171,12 @@
                     );
                     renderAdminUsersList(adminUsersCache);
                 } catch (err) {
+                    const listContainer =
+                        document.getElementById("adminUsersList");
+                    if (listContainer) {
+                        listContainer.innerHTML =
+                            '<div class="friend-list-empty">Gagal memuat daftar user.</div>';
+                    }
                     alert("Gagal memuat user: " + err.message);
                 }
             }
@@ -2846,6 +3283,7 @@
             }
 
             async function loadPeopleFromDb() {
+                renderListLoading("friendsList", "Memuat daftar teman...");
                 try {
                     const response = await apiFetch("/api/people");
                     const people = await response.json();
@@ -2853,6 +3291,12 @@
                     renderFriendsList(peopleCache);
                     renderAssignFriendsFields();
                 } catch (err) {
+                    const listContainer =
+                        document.getElementById("friendsList");
+                    if (listContainer) {
+                        listContainer.innerHTML =
+                            '<div class="friend-list-empty">Gagal memuat daftar teman.</div>';
+                    }
                     console.error("Gagal memuat orang:", err);
                 }
             }
@@ -3122,6 +3566,10 @@
                 if (!dropdown.contains(event.target)) {
                     closeMobileActionsMenu();
                 }
+            });
+
+            window.addEventListener("resize", function () {
+                updateAdminUsersButtonVisibility();
             });
         </script>
     </body>
