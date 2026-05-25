@@ -153,6 +153,53 @@
                 width: 100%;
             }
 
+            .top-friend-actions {
+                display: flex;
+                gap: 15px;
+                margin-bottom: 10px;
+            }
+
+            .top-friend-actions .input-group {
+                flex: 1;
+                margin-bottom: 0;
+            }
+
+            .mobile-actions-dropdown {
+                display: none;
+                position: relative;
+                width: 100%;
+            }
+
+            .mobile-actions-toggle {
+                width: 100%;
+            }
+
+            .mobile-actions-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 0;
+                right: 0;
+                background: #fff;
+                border: 1px solid #dfe6ee;
+                border-radius: 8px;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                padding: 8px;
+                display: none;
+                z-index: 2500;
+            }
+
+            .mobile-actions-menu.show {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .mobile-actions-menu .btn-add,
+            .mobile-actions-menu .btn-reset {
+                width: 100%;
+                grid-column: auto;
+            }
+
             .btn-add-green {
                 background-color: #27ae60;
             }
@@ -546,6 +593,10 @@
                 padding: 16px;
             }
 
+            #loadingModal {
+                z-index: 4000;
+            }
+
             .modal-overlay.show {
                 display: flex;
             }
@@ -806,6 +857,18 @@
                     grid-template-columns: 1fr;
                 }
 
+                .top-friend-actions {
+                    flex-direction: column;
+                }
+
+                .top-friend-actions .input-group {
+                    display: none;
+                }
+
+                .mobile-actions-dropdown {
+                    display: block;
+                }
+
                 .btn-actions {
                     flex-direction: column;
                 }
@@ -923,46 +986,112 @@
                 <h2 id="loginTitle">Login</h2>
                 <div class="input-group">
                     <label for="loginUsername">Username:</label>
-                    <input type="text" id="loginUsername" placeholder="Masukkan username" />
+                    <input
+                        type="text"
+                        id="loginUsername"
+                        placeholder="Masukkan username"
+                    />
                 </div>
-                <div class="input-group" style="margin-top: 10px;">
+                <div class="input-group" style="margin-top: 10px">
                     <label for="loginPassword">Password:</label>
-                    <input type="password" id="loginPassword" placeholder="Masukkan password" />
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        placeholder="Masukkan password"
+                    />
                 </div>
-                <div id="loginConfirmGroup" class="input-group" style="margin-top: 10px; display: none;">
-                    <label for="loginConfirmPassword">Konfirmasi Password:</label>
-                    <input type="password" id="loginConfirmPassword" placeholder="Ulangi password" />
+                <div
+                    id="loginConfirmGroup"
+                    class="input-group"
+                    style="margin-top: 10px; display: none"
+                >
+                    <label for="loginConfirmPassword"
+                        >Konfirmasi Password:</label
+                    >
+                    <input
+                        type="password"
+                        id="loginConfirmPassword"
+                        placeholder="Ulangi password"
+                    />
                 </div>
-                <div class="input-group" style="margin-top: 14px;">
-                    <button id="loginSubmitButton" class="btn-add" onclick="submitAuth()">Masuk</button>
+                <div class="input-group" style="margin-top: 14px">
+                    <button
+                        id="loginSubmitButton"
+                        class="btn-add"
+                        onclick="submitAuth()"
+                    >
+                        Masuk
+                    </button>
                 </div>
                 <div id="loginError" class="login-error"></div>
                 <div class="login-switch">
                     <span id="loginSwitchText">Belum punya akun?</span>
-                    <button type="button" onclick="toggleAuthMode()">Daftar</button>
+                    <button type="button" onclick="toggleAuthMode()">
+                        Daftar
+                    </button>
                 </div>
             </div>
         </div>
 
-        <div id="appContainer" class="container" style="display: none;">
+        <div id="appContainer" class="container" style="display: none">
             <h1>Struk Tagihan</h1>
 
-            <div class="input-section top-friend-actions" style="margin-bottom: 10px;">
+            <div class="input-section top-friend-actions">
                 <div class="input-group">
-                    <button class="btn-add" onclick="openAddFriendModal()">Tambah Teman</button>
+                    <button class="btn-add" onclick="openAddFriendModal()">
+                        Tambah Teman
+                    </button>
                 </div>
-                <div class="input-group">
+                <div id="adminUsersGroup" class="input-group">
                     <button
                         id="adminUsersButton"
                         class="btn-add"
-                        style="display: none;"
+                        style="display: none"
                         onclick="openAdminUsersModal()"
                     >
                         Kelola User
                     </button>
                 </div>
                 <div class="input-group">
-                    <button class="btn-reset" onclick="openLogoutConfirmModal()">Logout</button>
+                    <button
+                        class="btn-reset"
+                        onclick="openLogoutConfirmModal()"
+                    >
+                        Logout
+                    </button>
+                </div>
+                <div class="mobile-actions-dropdown">
+                    <button
+                        class="btn-add mobile-actions-toggle"
+                        onclick="toggleMobileActionsMenu()"
+                    >
+                        Menu
+                    </button>
+                    <div id="mobileActionsMenu" class="mobile-actions-menu">
+                        <button
+                            class="btn-add"
+                            type="button"
+                            onclick="handleMobileAction('add-friend')"
+                        >
+                            Tambah Teman
+                        </button>
+                        <button
+                            id="mobileAdminAction"
+                            class="btn-add"
+                            type="button"
+                            style="display: none"
+                            onclick="handleMobileAction('manage-users')"
+                        >
+                            Kelola User
+                        </button>
+                        <button
+                            class="btn-reset"
+                            type="button"
+                            onclick="handleMobileAction('logout')"
+                        >
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -977,7 +1106,9 @@
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="itemName" id="itemNameLabel">Nama Barang:</label>
+                    <label for="itemName" id="itemNameLabel"
+                        >Nama Barang:</label
+                    >
                     <input
                         type="text"
                         id="itemName"
@@ -986,7 +1117,9 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="itemPrice" id="itemPriceLabel">Harga Satuan:</label>
+                    <label for="itemPrice" id="itemPriceLabel"
+                        >Harga Satuan:</label
+                    >
                     <input
                         type="text"
                         id="itemPrice"
@@ -1006,7 +1139,13 @@
                     />
                 </div>
 
-                <button id="itemSubmitButton" class="btn-add btn-add-green" onclick="addItem()">Tambah Item</button>
+                <button
+                    id="itemSubmitButton"
+                    class="btn-add btn-add-green"
+                    onclick="addItem()"
+                >
+                    Tambah Item
+                </button>
             </div>
 
             <div id="personInputsContainer">
@@ -1029,10 +1168,18 @@
             </table>
 
             <div class="btn-actions">
-                <button class="btn-print" onclick="openMainActionConfirmModal('print')">
+                <button
+                    class="btn-print"
+                    onclick="openMainActionConfirmModal('print')"
+                >
                     Cetak
                 </button>
-                <button class="btn-reset" onclick="openMainActionConfirmModal('reset')">Reset</button>
+                <button
+                    class="btn-reset"
+                    onclick="openMainActionConfirmModal('reset')"
+                >
+                    Reset
+                </button>
             </div>
 
             <div class="summary">
@@ -1130,7 +1277,11 @@
                             "
                         />
                     </div>
-                    <button class="btn-add btn-split-apply" type="button" onclick="applySplitCount()">
+                    <button
+                        class="btn-add btn-split-apply"
+                        type="button"
+                        onclick="applySplitCount()"
+                    >
                         Terapkan
                     </button>
                 </div>
@@ -1157,123 +1308,263 @@
                 Rp 10.000)
             </div>
 
-            <div id="addFriendModal" class="modal-overlay" onclick="handleAddFriendModalBackdrop(event)">
+            <div
+                id="addFriendModal"
+                class="modal-overlay"
+                onclick="handleAddFriendModalBackdrop(event)"
+            >
                 <div class="modal-content">
                     <h3 class="modal-title">Kelola Teman</h3>
                     <div class="input-group">
                         <label for="newPersonName">Nama:</label>
-                        <input type="text" id="newPersonName" placeholder="Nama teman" />
+                        <input
+                            type="text"
+                            id="newPersonName"
+                            placeholder="Nama teman"
+                        />
                     </div>
                     <div class="input-group">
                         <label for="personRekening">No Rekening:</label>
-                        <input type="text" id="personRekening" placeholder="Nomor rekening" />
+                        <input
+                            type="text"
+                            id="personRekening"
+                            placeholder="Nomor rekening"
+                        />
                     </div>
                     <div class="friends-list" id="friendsList"></div>
                     <div class="modal-actions">
-                        <button class="btn-reset" onclick="closeAddFriendModal()">Tutup</button>
-                        <button class="btn-add" onclick="savePerson()">Simpan</button>
+                        <button
+                            class="btn-reset"
+                            onclick="closeAddFriendModal()"
+                        >
+                            Tutup
+                        </button>
+                        <button class="btn-add" onclick="savePerson()">
+                            Simpan
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="adminUsersModal" class="modal-overlay" onclick="handleAdminUsersModalBackdrop(event)">
+            <div
+                id="adminUsersModal"
+                class="modal-overlay"
+                onclick="handleAdminUsersModalBackdrop(event)"
+            >
                 <div class="modal-content">
                     <h3 class="modal-title">Kelola User</h3>
-                    <p style="margin: 0; color: #6b778c;">Daftar user non-admin.</p>
+                    <p style="margin: 0; color: #6b778c">
+                        Daftar user non-admin.
+                    </p>
                     <div class="friends-list" id="adminUsersList"></div>
                     <div class="modal-actions">
-                        <button class="btn-reset" onclick="closeAdminUsersModal()">Tutup</button>
+                        <button
+                            class="btn-reset"
+                            onclick="closeAdminUsersModal()"
+                        >
+                            Tutup
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="deleteUserModal" class="modal-overlay" onclick="handleDeleteUserModalBackdrop(event)">
+            <div
+                id="deleteUserModal"
+                class="modal-overlay"
+                onclick="handleDeleteUserModalBackdrop(event)"
+            >
                 <div class="modal-content">
                     <h3 class="modal-title">Konfirmasi Hapus User</h3>
-                    <p id="deleteUserMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <p
+                        id="deleteUserMessage"
+                        style="margin: 0; color: #2c3e50"
+                    ></p>
                     <div class="modal-actions">
-                        <button class="btn-add" onclick="closeDeleteUserModal()">Batal</button>
-                        <button class="btn-reset" onclick="confirmDeleteUser()">Hapus</button>
+                        <button
+                            class="btn-add"
+                            onclick="closeDeleteUserModal()"
+                        >
+                            Batal
+                        </button>
+                        <button class="btn-reset" onclick="confirmDeleteUser()">
+                            Hapus
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="assignFriendsModal" class="modal-overlay" onclick="handleAssignFriendsModalBackdrop(event)">
+            <div
+                id="assignFriendsModal"
+                class="modal-overlay"
+                onclick="handleAssignFriendsModalBackdrop(event)"
+            >
                 <div class="modal-content assign-modal-content">
                     <div class="assign-modal-header">
-                        <h3 class="assign-modal-title">Pilih Teman per Orang</h3>
-                        <p class="assign-modal-subtitle">Tentukan teman untuk tiap orang sebelum Item per Orang ditampilkan.</p>
+                        <h3 class="assign-modal-title">
+                            Pilih Teman per Orang
+                        </h3>
+                        <p class="assign-modal-subtitle">
+                            Tentukan teman untuk tiap orang sebelum Item per
+                            Orang ditampilkan.
+                        </p>
                     </div>
                     <div class="assign-modal-body">
-                        <div id="assignFriendsFields" class="assign-friends-fields"></div>
+                        <div
+                            id="assignFriendsFields"
+                            class="assign-friends-fields"
+                        ></div>
                         <div class="modal-actions assign-modal-actions">
-                            <button class="btn-reset" onclick="closeAssignFriendsModal()">Batal</button>
-                            <button class="btn-add" onclick="applySelectedFriendsFromModal()">Simpan Pilihan</button>
+                            <button
+                                class="btn-reset"
+                                onclick="closeAssignFriendsModal()"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                class="btn-add"
+                                onclick="applySelectedFriendsFromModal()"
+                            >
+                                Simpan Pilihan
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="deleteFriendModal" class="modal-overlay" onclick="handleDeleteFriendModalBackdrop(event)">
+            <div
+                id="deleteFriendModal"
+                class="modal-overlay"
+                onclick="handleDeleteFriendModalBackdrop(event)"
+            >
                 <div class="modal-content">
                     <h3 class="modal-title">Konfirmasi Hapus Teman</h3>
-                    <p id="deleteFriendMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <p
+                        id="deleteFriendMessage"
+                        style="margin: 0; color: #2c3e50"
+                    ></p>
                     <div class="modal-actions">
-                        <button class="btn-add" onclick="closeDeleteFriendModal()">Batal</button>
-                        <button class="btn-reset" onclick="confirmDeleteFriend()">Hapus</button>
+                        <button
+                            class="btn-add"
+                            onclick="closeDeleteFriendModal()"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            class="btn-reset"
+                            onclick="confirmDeleteFriend()"
+                        >
+                            Hapus
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="friendSuccessModal" class="modal-overlay" onclick="handleFriendSuccessModalBackdrop(event)">
+            <div
+                id="friendSuccessModal"
+                class="modal-overlay"
+                onclick="handleFriendSuccessModalBackdrop(event)"
+            >
                 <div class="modal-content">
                     <h3 class="modal-title">Berhasil</h3>
-                    <p id="friendSuccessMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <p
+                        id="friendSuccessMessage"
+                        style="margin: 0; color: #2c3e50"
+                    ></p>
                     <div class="modal-actions">
-                        <button class="btn-add" onclick="closeFriendSuccessModal()">OK</button>
+                        <button
+                            class="btn-add"
+                            onclick="closeFriendSuccessModal()"
+                        >
+                            OK
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="mainActionConfirmModal" class="modal-overlay" onclick="handleMainActionConfirmModalBackdrop(event)">
+            <div
+                id="mainActionConfirmModal"
+                class="modal-overlay"
+                onclick="handleMainActionConfirmModalBackdrop(event)"
+            >
                 <div class="modal-content">
-                    <h3 id="mainActionConfirmTitle" class="modal-title">Konfirmasi</h3>
-                    <p id="mainActionConfirmMessage" style="margin: 0; color: #2c3e50;"></p>
+                    <h3 id="mainActionConfirmTitle" class="modal-title">
+                        Konfirmasi
+                    </h3>
+                    <p
+                        id="mainActionConfirmMessage"
+                        style="margin: 0; color: #2c3e50"
+                    ></p>
                     <div class="modal-actions">
-                        <button class="btn-add" onclick="closeMainActionConfirmModal()">Batal</button>
-                        <button id="mainActionConfirmButton" class="btn-reset" onclick="confirmMainAction()">Lanjutkan</button>
+                        <button
+                            class="btn-add"
+                            onclick="closeMainActionConfirmModal()"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            id="mainActionConfirmButton"
+                            class="btn-reset"
+                            onclick="confirmMainAction()"
+                        >
+                            Lanjutkan
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="logoutConfirmModal" class="modal-overlay" onclick="handleLogoutConfirmModalBackdrop(event)">
+            <div
+                id="logoutConfirmModal"
+                class="modal-overlay"
+                onclick="handleLogoutConfirmModalBackdrop(event)"
+            >
                 <div class="modal-content">
                     <h3 class="modal-title">Konfirmasi Logout</h3>
-                    <p style="margin: 0; color: #2c3e50;">Yakin ingin keluar dari akun ini?</p>
-                    <div class="modal-actions">
-                        <button class="btn-add" onclick="closeLogoutConfirmModal()">Batal</button>
-                        <button class="btn-reset" onclick="logout()">Logout</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="splitWarningModal" class="modal-overlay" onclick="handleSplitWarningModalBackdrop(event)">
-                <div class="modal-content">
-                    <h3 class="modal-title">Peringatan</h3>
-                    <p style="margin: 0; color: #2c3e50;">
-                        Item belum ada di tabel. Tambahkan item terlebih dahulu sebelum menerapkan jumlah orang.
+                    <p style="margin: 0; color: #2c3e50">
+                        Yakin ingin keluar dari akun ini?
                     </p>
                     <div class="modal-actions">
-                        <button class="btn-add" onclick="closeSplitWarningModal()">OK</button>
+                        <button
+                            class="btn-add"
+                            onclick="closeLogoutConfirmModal()"
+                        >
+                            Batal
+                        </button>
+                        <button class="btn-reset" onclick="logout()">
+                            Logout
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="loadingModal" class="modal-overlay">
-                <div class="loading-card">
-                    <div class="loading-spinner"></div>
-                    <p id="loadingMessage" class="loading-text">Memproses data...</p>
+            <div
+                id="splitWarningModal"
+                class="modal-overlay"
+                onclick="handleSplitWarningModalBackdrop(event)"
+            >
+                <div class="modal-content">
+                    <h3 class="modal-title">Peringatan</h3>
+                    <p style="margin: 0; color: #2c3e50">
+                        Item belum ada di tabel. Tambahkan item terlebih dahulu
+                        sebelum menerapkan jumlah orang.
+                    </p>
+                    <div class="modal-actions">
+                        <button
+                            class="btn-add"
+                            onclick="closeSplitWarningModal()"
+                        >
+                            OK
+                        </button>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <div id="loadingModal" class="modal-overlay">
+            <div class="loading-card">
+                <div class="loading-spinner"></div>
+                <p id="loadingMessage" class="loading-text">
+                    Memproses data...
+                </p>
             </div>
         </div>
 
@@ -1284,19 +1575,19 @@
             let selectedSplitPeople = [];
             let pendingDeleteFriend = null;
             let pendingMainAction = null;
-            let authToken = localStorage.getItem('authToken') || '';
-            let authMode = 'login';
+            let authToken = localStorage.getItem("authToken") || "";
+            let authMode = "login";
             let currentUser = null;
             let adminUsersCache = [];
             let pendingDeleteUser = null;
             let loadingCount = 0;
 
             function setAuthToken(token) {
-                authToken = token || '';
+                authToken = token || "";
                 if (authToken) {
-                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem("authToken", authToken);
                 } else {
-                    localStorage.removeItem('authToken');
+                    localStorage.removeItem("authToken");
                 }
             }
 
@@ -1306,114 +1597,163 @@
             }
 
             function updateAdminUsersButtonVisibility() {
-                const button = document.getElementById('adminUsersButton');
+                const button = document.getElementById("adminUsersButton");
+                const group = document.getElementById("adminUsersGroup");
+                const mobileAdminAction =
+                    document.getElementById("mobileAdminAction");
                 if (!button) {
                     return;
                 }
                 const isAdmin =
-                    String(currentUser?.role || '').toLowerCase() === 'admin';
-                button.style.display = isAdmin ? 'block' : 'none';
+                    String(currentUser?.role || "").toLowerCase() === "admin";
+                button.style.display = isAdmin ? "block" : "none";
+                if (group) {
+                    group.style.display = isAdmin ? "flex" : "none";
+                }
+                if (mobileAdminAction) {
+                    mobileAdminAction.style.display = isAdmin
+                        ? "block"
+                        : "none";
+                }
+            }
+
+            function toggleMobileActionsMenu() {
+                const menu = document.getElementById("mobileActionsMenu");
+                if (!menu) {
+                    return;
+                }
+                menu.classList.toggle("show");
+            }
+
+            function closeMobileActionsMenu() {
+                const menu = document.getElementById("mobileActionsMenu");
+                if (!menu) {
+                    return;
+                }
+                menu.classList.remove("show");
+            }
+
+            function handleMobileAction(action) {
+                closeMobileActionsMenu();
+                if (action === "add-friend") {
+                    openAddFriendModal();
+                    return;
+                }
+                if (action === "manage-users") {
+                    openAdminUsersModal();
+                    return;
+                }
+                if (action === "logout") {
+                    openLogoutConfirmModal();
+                }
             }
 
             function showLoading(message) {
-                const modal = document.getElementById('loadingModal');
-                const textElement = document.getElementById('loadingMessage');
+                const modal = document.getElementById("loadingModal");
+                const textElement = document.getElementById("loadingMessage");
                 loadingCount += 1;
                 if (textElement) {
-                    textElement.textContent = message || 'Memproses data...';
+                    textElement.textContent = message || "Memproses data...";
                 }
                 if (modal) {
-                    modal.classList.add('show');
+                    modal.classList.add("show");
                 }
             }
 
             function hideLoading() {
-                const modal = document.getElementById('loadingModal');
+                const modal = document.getElementById("loadingModal");
                 loadingCount = Math.max(0, loadingCount - 1);
                 if (loadingCount === 0 && modal) {
-                    modal.classList.remove('show');
+                    modal.classList.remove("show");
                 }
             }
 
             function showLoginOverlay(message) {
-                const overlay = document.getElementById('loginOverlay');
-                const appContainer = document.getElementById('appContainer');
-                const errorElement = document.getElementById('loginError');
+                const overlay = document.getElementById("loginOverlay");
+                const appContainer = document.getElementById("appContainer");
+                const errorElement = document.getElementById("loginError");
                 if (errorElement) {
-                    errorElement.textContent = message || '';
+                    errorElement.textContent = message || "";
                 }
                 if (overlay) {
-                    overlay.style.display = 'flex';
+                    overlay.style.display = "flex";
                 }
                 if (appContainer) {
-                    appContainer.style.display = 'none';
+                    appContainer.style.display = "none";
                 }
                 closeAdminUsersModal();
                 closeDeleteUserModal();
                 closeLogoutConfirmModal();
+                closeMobileActionsMenu();
             }
 
             function setAuthMode(mode) {
-                authMode = mode === 'register' ? 'register' : 'login';
-                const isRegister = authMode === 'register';
+                authMode = mode === "register" ? "register" : "login";
+                const isRegister = authMode === "register";
 
-                const loginTitle = document.getElementById('loginTitle');
-                const submitButton = document.getElementById('loginSubmitButton');
-                const switchText = document.getElementById('loginSwitchText');
-                const switchButton = document.querySelector('.login-switch button');
-                const confirmGroup = document.getElementById('loginConfirmGroup');
-                const errorElement = document.getElementById('loginError');
-                const usernameInput = document.getElementById('loginUsername');
-                const passwordInput = document.getElementById('loginPassword');
-                const confirmPasswordInput = document.getElementById('loginConfirmPassword');
+                const loginTitle = document.getElementById("loginTitle");
+                const submitButton =
+                    document.getElementById("loginSubmitButton");
+                const switchText = document.getElementById("loginSwitchText");
+                const switchButton = document.querySelector(
+                    ".login-switch button",
+                );
+                const confirmGroup =
+                    document.getElementById("loginConfirmGroup");
+                const errorElement = document.getElementById("loginError");
+                const usernameInput = document.getElementById("loginUsername");
+                const passwordInput = document.getElementById("loginPassword");
+                const confirmPasswordInput = document.getElementById(
+                    "loginConfirmPassword",
+                );
 
                 if (loginTitle) {
-                    loginTitle.textContent = isRegister ? 'Daftar' : 'Login';
+                    loginTitle.textContent = isRegister ? "Daftar" : "Login";
                 }
                 if (submitButton) {
-                    submitButton.textContent = isRegister ? 'Daftar' : 'Masuk';
+                    submitButton.textContent = isRegister ? "Daftar" : "Masuk";
                 }
                 if (switchText) {
                     switchText.textContent = isRegister
-                        ? 'Sudah punya akun?'
-                        : 'Belum punya akun?';
+                        ? "Sudah punya akun?"
+                        : "Belum punya akun?";
                 }
                 if (switchButton) {
-                    switchButton.textContent = isRegister ? 'Login' : 'Daftar';
+                    switchButton.textContent = isRegister ? "Login" : "Daftar";
                 }
                 if (confirmGroup) {
-                    confirmGroup.style.display = isRegister ? 'flex' : 'none';
+                    confirmGroup.style.display = isRegister ? "flex" : "none";
                 }
                 if (errorElement) {
-                    errorElement.textContent = '';
+                    errorElement.textContent = "";
                 }
                 if (usernameInput) {
-                    usernameInput.value = '';
+                    usernameInput.value = "";
                 }
                 if (passwordInput) {
-                    passwordInput.value = '';
+                    passwordInput.value = "";
                 }
                 if (confirmPasswordInput) {
-                    confirmPasswordInput.value = '';
+                    confirmPasswordInput.value = "";
                 }
             }
 
             function toggleAuthMode() {
-                setAuthMode(authMode === 'login' ? 'register' : 'login');
+                setAuthMode(authMode === "login" ? "register" : "login");
             }
 
             function hideLoginOverlay() {
-                const overlay = document.getElementById('loginOverlay');
-                const appContainer = document.getElementById('appContainer');
-                const errorElement = document.getElementById('loginError');
+                const overlay = document.getElementById("loginOverlay");
+                const appContainer = document.getElementById("appContainer");
+                const errorElement = document.getElementById("loginError");
                 if (errorElement) {
-                    errorElement.textContent = '';
+                    errorElement.textContent = "";
                 }
                 if (overlay) {
-                    overlay.style.display = 'none';
+                    overlay.style.display = "none";
                 }
                 if (appContainer) {
-                    appContainer.style.display = 'block';
+                    appContainer.style.display = "block";
                 }
             }
 
@@ -1426,36 +1766,36 @@
                     ...options,
                     headers,
                 });
-                if (response.status === 401 && !url.startsWith('/api/auth/')) {
-                    setAuthToken('');
-                    showLoginOverlay('Sesi habis, silakan login lagi.');
+                if (response.status === 401 && !url.startsWith("/api/auth/")) {
+                    setAuthToken("");
+                    showLoginOverlay("Sesi habis, silakan login lagi.");
                 }
                 return response;
             }
 
             async function login() {
                 const username = String(
-                    document.getElementById('loginUsername').value || '',
+                    document.getElementById("loginUsername").value || "",
                 ).trim();
                 const password = String(
-                    document.getElementById('loginPassword').value || '',
+                    document.getElementById("loginPassword").value || "",
                 );
 
                 if (!username || !password) {
-                    showLoginOverlay('Username dan password wajib diisi.');
+                    showLoginOverlay("Username dan password wajib diisi.");
                     return;
                 }
 
                 try {
-                    showLoading('Login...');
-                    const response = await fetch('/api/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                    showLoading("Login...");
+                    const response = await fetch("/api/auth/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ username, password }),
                     });
                     const result = await response.json();
                     if (!response.ok) {
-                        throw new Error(result.error || 'Login gagal');
+                        throw new Error(result.error || "Login gagal");
                     }
 
                     setAuthToken(result.token);
@@ -1471,39 +1811,41 @@
 
             async function register() {
                 const username = String(
-                    document.getElementById('loginUsername').value || '',
+                    document.getElementById("loginUsername").value || "",
                 ).trim();
                 const password = String(
-                    document.getElementById('loginPassword').value || '',
+                    document.getElementById("loginPassword").value || "",
                 );
                 const confirmPassword = String(
-                    document.getElementById('loginConfirmPassword').value || '',
+                    document.getElementById("loginConfirmPassword").value || "",
                 );
 
                 if (!username || !password || !confirmPassword) {
-                    showLoginOverlay('Username, password, dan konfirmasi wajib diisi.');
+                    showLoginOverlay(
+                        "Username, password, dan konfirmasi wajib diisi.",
+                    );
                     return;
                 }
 
                 if (password !== confirmPassword) {
-                    showLoginOverlay('Konfirmasi password tidak sama.');
+                    showLoginOverlay("Konfirmasi password tidak sama.");
                     return;
                 }
 
                 try {
-                    showLoading('Mendaftarkan akun...');
-                    const response = await fetch('/api/auth/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                    showLoading("Mendaftarkan akun...");
+                    const response = await fetch("/api/auth/register", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ username, password }),
                     });
                     const result = await response.json();
                     if (!response.ok) {
-                        throw new Error(result.error || 'Daftar gagal');
+                        throw new Error(result.error || "Daftar gagal");
                     }
 
-                    setAuthMode('login');
-                    showLoginOverlay('Daftar berhasil. Silakan login.');
+                    setAuthMode("login");
+                    showLoginOverlay("Daftar berhasil. Silakan login.");
                 } catch (err) {
                     showLoginOverlay(err.message);
                 } finally {
@@ -1512,7 +1854,7 @@
             }
 
             function submitAuth() {
-                if (authMode === 'register') {
+                if (authMode === "register") {
                     register();
                     return;
                 }
@@ -1520,21 +1862,21 @@
             }
 
             function openLogoutConfirmModal() {
-                const modal = document.getElementById('logoutConfirmModal');
+                const modal = document.getElementById("logoutConfirmModal");
                 if (modal) {
-                    modal.classList.add('show');
+                    modal.classList.add("show");
                 }
             }
 
             function closeLogoutConfirmModal() {
-                const modal = document.getElementById('logoutConfirmModal');
+                const modal = document.getElementById("logoutConfirmModal");
                 if (modal) {
-                    modal.classList.remove('show');
+                    modal.classList.remove("show");
                 }
             }
 
             function handleLogoutConfirmModalBackdrop(event) {
-                if (event.target.id === 'logoutConfirmModal') {
+                if (event.target.id === "logoutConfirmModal") {
                     closeLogoutConfirmModal();
                 }
             }
@@ -1542,32 +1884,32 @@
             async function logout() {
                 closeLogoutConfirmModal();
                 try {
-                    showLoading('Logout...');
-                    await apiFetch('/api/auth/logout', { method: 'POST' });
+                    showLoading("Logout...");
+                    await apiFetch("/api/auth/logout", { method: "POST" });
                 } catch (err) {
                 } finally {
                     hideLoading();
                 }
-                setAuthToken('');
+                setAuthToken("");
                 setCurrentUser(null);
-                setAuthMode('login');
-                document.getElementById('loginPassword').value = '';
-                document.getElementById('loginConfirmPassword').value = '';
+                setAuthMode("login");
+                document.getElementById("loginPassword").value = "";
+                document.getElementById("loginConfirmPassword").value = "";
                 showLoginOverlay();
             }
 
             async function checkAuthOnLoad() {
                 if (!authToken) {
-                    setAuthMode('login');
+                    setAuthMode("login");
                     showLoginOverlay();
                     return;
                 }
 
                 try {
-                    const response = await apiFetch('/api/auth/me');
+                    const response = await apiFetch("/api/auth/me");
                     const result = await response.json();
                     if (!response.ok) {
-                        setAuthToken('');
+                        setAuthToken("");
                         setCurrentUser(null);
                         showLoginOverlay();
                         return;
@@ -1576,10 +1918,10 @@
                     hideLoginOverlay();
                     await loadPeopleFromDb();
                 } catch (err) {
-                    setAuthToken('');
+                    setAuthToken("");
                     setCurrentUser(null);
-                    setAuthMode('login');
-                    showLoginOverlay('Gagal memeriksa sesi login.');
+                    setAuthMode("login");
+                    showLoginOverlay("Gagal memeriksa sesi login.");
                 }
             }
 
@@ -1966,8 +2308,7 @@
                 document.getElementById("taxAmountInput").value = "";
                 document.getElementById("splitCount").value = "1";
                 // Clear person inputs container
-                document.getElementById("personInputsContainer").innerHTML =
-                    "";
+                document.getElementById("personInputsContainer").innerHTML = "";
                 // Remove person bills section
                 const existingBills = document.querySelector(
                     ".person-bills-section",
@@ -2031,34 +2372,40 @@
 
             function openMainActionConfirmModal(action) {
                 pendingMainAction = action;
-                const title = document.getElementById('mainActionConfirmTitle');
-                const message = document.getElementById('mainActionConfirmMessage');
-                const confirmButton = document.getElementById('mainActionConfirmButton');
+                const title = document.getElementById("mainActionConfirmTitle");
+                const message = document.getElementById(
+                    "mainActionConfirmMessage",
+                );
+                const confirmButton = document.getElementById(
+                    "mainActionConfirmButton",
+                );
 
-                if (action === 'print') {
-                    title.textContent = 'Konfirmasi Cetak';
-                    message.textContent = 'Apakah Anda yakin ingin mencetak struk ini?';
-                    confirmButton.textContent = 'Cetak';
-                    confirmButton.className = 'btn-print';
+                if (action === "print") {
+                    title.textContent = "Konfirmasi Cetak";
+                    message.textContent =
+                        "Apakah Anda yakin ingin mencetak struk ini?";
+                    confirmButton.textContent = "Cetak";
+                    confirmButton.className = "btn-print";
                 } else {
-                    title.textContent = 'Konfirmasi Reset';
-                    message.textContent = 'Apakah Anda yakin ingin menghapus semua data?';
-                    confirmButton.textContent = 'Reset';
-                    confirmButton.className = 'btn-reset';
+                    title.textContent = "Konfirmasi Reset";
+                    message.textContent =
+                        "Apakah Anda yakin ingin menghapus semua data?";
+                    confirmButton.textContent = "Reset";
+                    confirmButton.className = "btn-reset";
                 }
 
-                const modal = document.getElementById('mainActionConfirmModal');
-                modal.classList.add('show');
+                const modal = document.getElementById("mainActionConfirmModal");
+                modal.classList.add("show");
             }
 
             function closeMainActionConfirmModal() {
-                const modal = document.getElementById('mainActionConfirmModal');
-                modal.classList.remove('show');
+                const modal = document.getElementById("mainActionConfirmModal");
+                modal.classList.remove("show");
                 pendingMainAction = null;
             }
 
             function handleMainActionConfirmModalBackdrop(event) {
-                if (event.target.id === 'mainActionConfirmModal') {
+                if (event.target.id === "mainActionConfirmModal") {
                     closeMainActionConfirmModal();
                 }
             }
@@ -2066,11 +2413,11 @@
             function confirmMainAction() {
                 const action = pendingMainAction;
                 closeMainActionConfirmModal();
-                if (action === 'print') {
+                if (action === "print") {
                     window.print();
                     return;
                 }
-                if (action === 'reset') {
+                if (action === "reset") {
                     resetAll();
                 }
             }
@@ -2078,7 +2425,8 @@
             // Allow Enter key to add item
             document.addEventListener("keypress", function (e) {
                 if (e.key === "Enter") {
-                    const loginOverlay = document.getElementById("loginOverlay");
+                    const loginOverlay =
+                        document.getElementById("loginOverlay");
                     if (loginOverlay && loginOverlay.style.display !== "none") {
                         submitAuth();
                         return;
@@ -2088,37 +2436,60 @@
                         savePerson();
                         return;
                     }
-                    const assignModal = document.getElementById("assignFriendsModal");
+                    const assignModal =
+                        document.getElementById("assignFriendsModal");
                     if (assignModal && assignModal.classList.contains("show")) {
                         applySelectedFriendsFromModal();
                         return;
                     }
-                    const warningModal = document.getElementById("splitWarningModal");
-                    if (warningModal && warningModal.classList.contains("show")) {
+                    const warningModal =
+                        document.getElementById("splitWarningModal");
+                    if (
+                        warningModal &&
+                        warningModal.classList.contains("show")
+                    ) {
                         closeSplitWarningModal();
                         return;
                     }
-                    const deleteFriendModal = document.getElementById("deleteFriendModal");
-                    if (deleteFriendModal && deleteFriendModal.classList.contains("show")) {
+                    const deleteFriendModal =
+                        document.getElementById("deleteFriendModal");
+                    if (
+                        deleteFriendModal &&
+                        deleteFriendModal.classList.contains("show")
+                    ) {
                         confirmDeleteFriend();
                         return;
                     }
-                    const deleteUserModal = document.getElementById("deleteUserModal");
-                    if (deleteUserModal && deleteUserModal.classList.contains("show")) {
+                    const deleteUserModal =
+                        document.getElementById("deleteUserModal");
+                    if (
+                        deleteUserModal &&
+                        deleteUserModal.classList.contains("show")
+                    ) {
                         confirmDeleteUser();
                         return;
                     }
-                    const friendSuccessModal = document.getElementById("friendSuccessModal");
-                    if (friendSuccessModal && friendSuccessModal.classList.contains("show")) {
+                    const friendSuccessModal =
+                        document.getElementById("friendSuccessModal");
+                    if (
+                        friendSuccessModal &&
+                        friendSuccessModal.classList.contains("show")
+                    ) {
                         closeFriendSuccessModal();
                         return;
                     }
-                    const mainActionModal = document.getElementById("mainActionConfirmModal");
-                    if (mainActionModal && mainActionModal.classList.contains("show")) {
+                    const mainActionModal = document.getElementById(
+                        "mainActionConfirmModal",
+                    );
+                    if (
+                        mainActionModal &&
+                        mainActionModal.classList.contains("show")
+                    ) {
                         confirmMainAction();
                         return;
                     }
-                    const logoutModal = document.getElementById("logoutConfirmModal");
+                    const logoutModal =
+                        document.getElementById("logoutConfirmModal");
                     if (logoutModal && logoutModal.classList.contains("show")) {
                         logout();
                         return;
@@ -2188,9 +2559,13 @@
             // Add item for specific person
             function addPersonItem() {
                 const personNumber =
-                    parseInt(document.getElementById("personItemTarget").value, 10) ||
-                    1;
-                const name = document.getElementById("personItemName").value.trim();
+                    parseInt(
+                        document.getElementById("personItemTarget").value,
+                        10,
+                    ) || 1;
+                const name = document
+                    .getElementById("personItemName")
+                    .value.trim();
                 const price = parseFormattedNumber(
                     document.getElementById("personItemPrice").value,
                 );
@@ -2239,57 +2614,63 @@
             }
 
             async function savePersonToDb() {
-                const personNameInput = document.getElementById('personName');
-                const newPersonNameInput = document.getElementById('newPersonName');
-                const rekeningInput = document.getElementById('personRekening');
-                const nama = (personNameInput?.value || newPersonNameInput?.value || '').trim();
-                const noRekening = (rekeningInput?.value || '').trim();
-                
+                const personNameInput = document.getElementById("personName");
+                const newPersonNameInput =
+                    document.getElementById("newPersonName");
+                const rekeningInput = document.getElementById("personRekening");
+                const nama = (
+                    personNameInput?.value ||
+                    newPersonNameInput?.value ||
+                    ""
+                ).trim();
+                const noRekening = (rekeningInput?.value || "").trim();
+
                 if (!nama) {
-                    alert('Nama tidak boleh kosong!');
+                    alert("Nama tidak boleh kosong!");
                     return;
                 }
                 if (!noRekening) {
-                    alert('Nomor rekening tidak boleh kosong!');
+                    alert("Nomor rekening tidak boleh kosong!");
                     return;
                 }
                 const isDuplicateName = peopleCache.some(
                     (person) =>
-                        String(person.nama || '').trim().toLowerCase() ===
-                        nama.toLowerCase(),
+                        String(person.nama || "")
+                            .trim()
+                            .toLowerCase() === nama.toLowerCase(),
                 );
                 if (isDuplicateName) {
-                    alert('Nama teman sudah ada!');
+                    alert("Nama teman sudah ada!");
                     return;
                 }
-                
+
                 try {
-                    showLoading('Menyimpan data...');
-                    const response = await apiFetch('/api/people', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ nama, no_rekening: noRekening })
+                    showLoading("Menyimpan data...");
+                    const response = await apiFetch("/api/people", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ nama, no_rekening: noRekening }),
                     });
                     if (!response.ok) {
                         const errBody = await response.json();
-                        throw new Error(errBody.error || 'Request gagal');
+                        throw new Error(errBody.error || "Request gagal");
                     }
                     const result = await response.json();
                     if (result.id) {
                         if (personNameInput) {
-                            personNameInput.value = '';
+                            personNameInput.value = "";
                         }
                         if (rekeningInput) {
-                            rekeningInput.value = '';
+                            rekeningInput.value = "";
                         }
                         if (newPersonNameInput) {
-                            newPersonNameInput.value = '';
+                            newPersonNameInput.value = "";
                         }
                         await loadPeopleFromDb();
-                        openFriendSuccessModal('Teman berhasil ditambahkan.');
+                        openFriendSuccessModal("Teman berhasil ditambahkan.");
                     }
                 } catch (err) {
-                    alert('Gagal menyimpan: ' + err.message);
+                    alert("Gagal menyimpan: " + err.message);
                 } finally {
                     hideLoading();
                 }
@@ -2300,70 +2681,75 @@
             }
 
             function openAddFriendModal() {
-                const modal = document.getElementById('addFriendModal');
-                modal.classList.add('show');
+                const modal = document.getElementById("addFriendModal");
+                modal.classList.add("show");
                 loadPeopleFromDb();
-                const nameInput = document.getElementById('newPersonName');
+                const nameInput = document.getElementById("newPersonName");
                 if (nameInput) {
                     nameInput.focus();
                 }
             }
 
             function closeAddFriendModal() {
-                const modal = document.getElementById('addFriendModal');
-                modal.classList.remove('show');
+                const modal = document.getElementById("addFriendModal");
+                modal.classList.remove("show");
             }
 
             function handleAddFriendModalBackdrop(event) {
-                if (event.target.id === 'addFriendModal') {
+                if (event.target.id === "addFriendModal") {
                     closeAddFriendModal();
                 }
             }
 
             async function openAdminUsersModal() {
-                if (String(currentUser?.role || '').toLowerCase() !== 'admin') {
+                if (String(currentUser?.role || "").toLowerCase() !== "admin") {
                     return;
                 }
-                const modal = document.getElementById('adminUsersModal');
-                modal.classList.add('show');
+                const modal = document.getElementById("adminUsersModal");
+                modal.classList.add("show");
                 await loadAdminUsers();
             }
 
             function closeAdminUsersModal() {
-                const modal = document.getElementById('adminUsersModal');
+                const modal = document.getElementById("adminUsersModal");
                 if (modal) {
-                    modal.classList.remove('show');
+                    modal.classList.remove("show");
                 }
             }
 
             function handleAdminUsersModalBackdrop(event) {
-                if (event.target.id === 'adminUsersModal') {
+                if (event.target.id === "adminUsersModal") {
                     closeAdminUsersModal();
                 }
             }
 
             async function loadAdminUsers() {
                 try {
-                    const response = await apiFetch('/api/users');
+                    const response = await apiFetch("/api/users");
                     const users = await response.json();
                     if (!response.ok) {
-                        throw new Error(users.error || 'Gagal memuat daftar user');
+                        throw new Error(
+                            users.error || "Gagal memuat daftar user",
+                        );
                     }
-                    adminUsersCache = (Array.isArray(users) ? users : []).filter(
-                        (user) => String(user.role || '').toLowerCase() !== 'admin',
+                    adminUsersCache = (
+                        Array.isArray(users) ? users : []
+                    ).filter(
+                        (user) =>
+                            String(user.role || "").toLowerCase() !== "admin",
                     );
                     renderAdminUsersList(adminUsersCache);
                 } catch (err) {
-                    alert('Gagal memuat user: ' + err.message);
+                    alert("Gagal memuat user: " + err.message);
                 }
             }
 
             function renderAdminUsersList(users) {
-                const listContainer = document.getElementById('adminUsersList');
+                const listContainer = document.getElementById("adminUsersList");
                 if (!listContainer) {
                     return;
                 }
-                listContainer.innerHTML = '';
+                listContainer.innerHTML = "";
 
                 if (!Array.isArray(users) || users.length === 0) {
                     listContainer.innerHTML =
@@ -2372,26 +2758,27 @@
                 }
 
                 users.forEach((user) => {
-                    const row = document.createElement('div');
-                    row.className = 'friend-list-item';
+                    const row = document.createElement("div");
+                    row.className = "friend-list-item";
 
-                    const info = document.createElement('div');
-                    const username = document.createElement('div');
-                    username.className = 'friend-list-name';
-                    username.textContent = user.username || '-';
+                    const info = document.createElement("div");
+                    const username = document.createElement("div");
+                    username.className = "friend-list-name";
+                    username.textContent = user.username || "-";
 
-                    const role = document.createElement('div');
-                    role.className = 'friend-list-rekening';
-                    role.textContent = `Role: ${user.role || 'user'}`;
+                    const role = document.createElement("div");
+                    role.className = "friend-list-rekening";
+                    role.textContent = `Role: ${user.role || "user"}`;
 
                     info.appendChild(username);
                     info.appendChild(role);
 
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'btn-reset friend-delete-btn';
-                    deleteBtn.type = 'button';
-                    deleteBtn.textContent = 'Hapus';
-                    deleteBtn.onclick = () => openDeleteUserModal(user.id, user.username);
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "btn-reset friend-delete-btn";
+                    deleteBtn.type = "button";
+                    deleteBtn.textContent = "Hapus";
+                    deleteBtn.onclick = () =>
+                        openDeleteUserModal(user.id, user.username);
 
                     row.appendChild(info);
                     row.appendChild(deleteBtn);
@@ -2402,26 +2789,26 @@
             function openDeleteUserModal(userId, username) {
                 pendingDeleteUser = {
                     id: userId,
-                    username: username || 'user ini',
+                    username: username || "user ini",
                 };
-                const message = document.getElementById('deleteUserMessage');
+                const message = document.getElementById("deleteUserMessage");
                 if (message) {
                     message.textContent = `Yakin ingin menghapus user ${pendingDeleteUser.username}?`;
                 }
-                const modal = document.getElementById('deleteUserModal');
-                modal.classList.add('show');
+                const modal = document.getElementById("deleteUserModal");
+                modal.classList.add("show");
             }
 
             function closeDeleteUserModal() {
-                const modal = document.getElementById('deleteUserModal');
+                const modal = document.getElementById("deleteUserModal");
                 if (modal) {
-                    modal.classList.remove('show');
+                    modal.classList.remove("show");
                 }
                 pendingDeleteUser = null;
             }
 
             function handleDeleteUserModalBackdrop(event) {
-                if (event.target.id === 'deleteUserModal') {
+                if (event.target.id === "deleteUserModal") {
                     closeDeleteUserModal();
                 }
             }
@@ -2434,13 +2821,13 @@
                 const username = pendingDeleteUser.username;
 
                 try {
-                    showLoading('Menghapus data...');
+                    showLoading("Menghapus data...");
                     const response = await apiFetch(`/api/users/${userId}`, {
-                        method: 'DELETE',
+                        method: "DELETE",
                     });
                     const result = await response.json();
                     if (!response.ok) {
-                        throw new Error(result.error || 'Gagal menghapus user');
+                        throw new Error(result.error || "Gagal menghapus user");
                     }
 
                     adminUsersCache = adminUsersCache.filter(
@@ -2448,9 +2835,11 @@
                     );
                     renderAdminUsersList(adminUsersCache);
                     closeDeleteUserModal();
-                    openFriendSuccessModal(`User ${username} berhasil dihapus.`);
+                    openFriendSuccessModal(
+                        `User ${username} berhasil dihapus.`,
+                    );
                 } catch (err) {
-                    alert('Gagal menghapus user: ' + err.message);
+                    alert("Gagal menghapus user: " + err.message);
                 } finally {
                     hideLoading();
                 }
@@ -2458,13 +2847,13 @@
 
             async function loadPeopleFromDb() {
                 try {
-                    const response = await apiFetch('/api/people');
+                    const response = await apiFetch("/api/people");
                     const people = await response.json();
                     peopleCache = Array.isArray(people) ? people : [];
                     renderFriendsList(peopleCache);
                     renderAssignFriendsFields();
                 } catch (err) {
-                    console.error('Gagal memuat orang:', err);
+                    console.error("Gagal memuat orang:", err);
                 }
             }
 
@@ -2479,17 +2868,17 @@
                 }
 
                 renderAssignFriendsFields(splitCount);
-                const modal = document.getElementById('assignFriendsModal');
-                modal.classList.add('show');
+                const modal = document.getElementById("assignFriendsModal");
+                modal.classList.add("show");
             }
 
             function closeAssignFriendsModal() {
-                const modal = document.getElementById('assignFriendsModal');
-                modal.classList.remove('show');
+                const modal = document.getElementById("assignFriendsModal");
+                modal.classList.remove("show");
             }
 
             function handleAssignFriendsModalBackdrop(event) {
-                if (event.target.id === 'assignFriendsModal') {
+                if (event.target.id === "assignFriendsModal") {
                     closeAssignFriendsModal();
                 }
             }
@@ -2497,38 +2886,40 @@
             function renderAssignFriendsFields(forcedSplitCount) {
                 const splitCount =
                     forcedSplitCount ||
-                    parseInt(document.getElementById('splitCount').value) ||
+                    parseInt(document.getElementById("splitCount").value) ||
                     1;
-                const container = document.getElementById('assignFriendsFields');
+                const container = document.getElementById(
+                    "assignFriendsFields",
+                );
                 if (!container || splitCount <= 1) {
                     if (container) {
-                        container.innerHTML = '';
+                        container.innerHTML = "";
                     }
                     return;
                 }
 
-                container.innerHTML = '';
+                container.innerHTML = "";
 
                 for (let i = 1; i <= splitCount; i++) {
-                    const row = document.createElement('div');
-                    row.className = 'assign-friend-row';
+                    const row = document.createElement("div");
+                    row.className = "assign-friend-row";
 
-                    const label = document.createElement('label');
+                    const label = document.createElement("label");
                     label.textContent = `Orang ${i}`;
-                    label.setAttribute('for', `assignFriendSelect${i}`);
+                    label.setAttribute("for", `assignFriendSelect${i}`);
 
-                    const select = document.createElement('select');
-                    select.className = 'assign-friend-select';
+                    const select = document.createElement("select");
+                    select.className = "assign-friend-select";
                     select.id = `assignFriendSelect${i}`;
                     select.dataset.personIndex = String(i);
 
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = '';
-                    defaultOption.textContent = '-- Pilih teman --';
+                    const defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.textContent = "-- Pilih teman --";
                     select.appendChild(defaultOption);
 
                     peopleCache.forEach((person) => {
-                        const option = document.createElement('option');
+                        const option = document.createElement("option");
                         option.value = String(person.id);
                         option.textContent = person.nama;
                         select.appendChild(option);
@@ -2549,18 +2940,22 @@
 
             function applySelectedFriendsFromModal() {
                 const splitCount =
-                    parseInt(document.getElementById('splitCount').value) || 1;
+                    parseInt(document.getElementById("splitCount").value) || 1;
                 selectedSplitPeople = [];
                 for (let i = 1; i <= splitCount; i++) {
-                    const select = document.getElementById(`assignFriendSelect${i}`);
-                    const selectedId = select ? select.value : '';
+                    const select = document.getElementById(
+                        `assignFriendSelect${i}`,
+                    );
+                    const selectedId = select ? select.value : "";
                     const selectedPerson = peopleCache.find(
                         (person) => String(person.id) === selectedId,
                     );
                     selectedSplitPeople.push({
                         personIndex: i,
                         friendId: selectedId ? Number(selectedId) : null,
-                        name: selectedPerson ? selectedPerson.nama : `Orang ${i}`,
+                        name: selectedPerson
+                            ? selectedPerson.nama
+                            : `Orang ${i}`,
                     });
                 }
 
@@ -2579,39 +2974,41 @@
             }
 
             function renderFriendsList(people) {
-                const listContainer = document.getElementById('friendsList');
+                const listContainer = document.getElementById("friendsList");
                 if (!listContainer) {
                     return;
                 }
 
-                listContainer.innerHTML = '';
+                listContainer.innerHTML = "";
 
                 if (!Array.isArray(people) || people.length === 0) {
-                    listContainer.innerHTML = '<div class="friend-list-empty">Belum ada teman tersimpan.</div>';
+                    listContainer.innerHTML =
+                        '<div class="friend-list-empty">Belum ada teman tersimpan.</div>';
                     return;
                 }
 
                 people.forEach((person) => {
-                    const row = document.createElement('div');
-                    row.className = 'friend-list-item';
+                    const row = document.createElement("div");
+                    row.className = "friend-list-item";
 
-                    const info = document.createElement('div');
-                    const name = document.createElement('div');
-                    name.className = 'friend-list-name';
-                    name.textContent = person.nama || '-';
+                    const info = document.createElement("div");
+                    const name = document.createElement("div");
+                    name.className = "friend-list-name";
+                    name.textContent = person.nama || "-";
 
-                    const rekening = document.createElement('div');
-                    rekening.className = 'friend-list-rekening';
-                    rekening.textContent = person.no_rekening || '-';
+                    const rekening = document.createElement("div");
+                    rekening.className = "friend-list-rekening";
+                    rekening.textContent = person.no_rekening || "-";
 
                     info.appendChild(name);
                     info.appendChild(rekening);
 
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'btn-reset friend-delete-btn';
-                    deleteBtn.textContent = 'Hapus';
-                    deleteBtn.type = 'button';
-                    deleteBtn.onclick = () => openDeleteFriendModal(person.id, person.nama);
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "btn-reset friend-delete-btn";
+                    deleteBtn.textContent = "Hapus";
+                    deleteBtn.type = "button";
+                    deleteBtn.onclick = () =>
+                        openDeleteFriendModal(person.id, person.nama);
 
                     row.appendChild(info);
                     row.appendChild(deleteBtn);
@@ -2622,44 +3019,46 @@
             function openDeleteFriendModal(personId, personName) {
                 pendingDeleteFriend = {
                     id: personId,
-                    name: personName || 'teman ini',
+                    name: personName || "teman ini",
                 };
-                const message = document.getElementById('deleteFriendMessage');
+                const message = document.getElementById("deleteFriendMessage");
                 if (message) {
                     message.textContent = `Yakin ingin menghapus ${pendingDeleteFriend.name}?`;
                 }
-                const modal = document.getElementById('deleteFriendModal');
-                modal.classList.add('show');
+                const modal = document.getElementById("deleteFriendModal");
+                modal.classList.add("show");
             }
 
             function closeDeleteFriendModal() {
-                const modal = document.getElementById('deleteFriendModal');
-                modal.classList.remove('show');
+                const modal = document.getElementById("deleteFriendModal");
+                modal.classList.remove("show");
                 pendingDeleteFriend = null;
             }
 
             function handleDeleteFriendModalBackdrop(event) {
-                if (event.target.id === 'deleteFriendModal') {
+                if (event.target.id === "deleteFriendModal") {
                     closeDeleteFriendModal();
                 }
             }
 
             function openFriendSuccessModal(message) {
-                const messageElement = document.getElementById('friendSuccessMessage');
+                const messageElement = document.getElementById(
+                    "friendSuccessMessage",
+                );
                 if (messageElement) {
-                    messageElement.textContent = message || 'Berhasil.';
+                    messageElement.textContent = message || "Berhasil.";
                 }
-                const modal = document.getElementById('friendSuccessModal');
-                modal.classList.add('show');
+                const modal = document.getElementById("friendSuccessModal");
+                modal.classList.add("show");
             }
 
             function closeFriendSuccessModal() {
-                const modal = document.getElementById('friendSuccessModal');
-                modal.classList.remove('show');
+                const modal = document.getElementById("friendSuccessModal");
+                modal.classList.remove("show");
             }
 
             function handleFriendSuccessModalBackdrop(event) {
-                if (event.target.id === 'friendSuccessModal') {
+                if (event.target.id === "friendSuccessModal") {
                     closeFriendSuccessModal();
                 }
             }
@@ -2671,33 +3070,36 @@
                 const personId = pendingDeleteFriend.id;
 
                 try {
-                    showLoading('Menghapus data...');
+                    showLoading("Menghapus data...");
                     const response = await apiFetch(`/api/people/${personId}`, {
-                        method: 'DELETE',
+                        method: "DELETE",
                     });
 
                     if (!response.ok) {
                         const errBody = await response.json();
-                        throw new Error(errBody.error || 'Gagal menghapus teman');
+                        throw new Error(
+                            errBody.error || "Gagal menghapus teman",
+                        );
                     }
 
                     await loadPeopleFromDb();
                     closeDeleteFriendModal();
                     pendingDeleteFriend = null;
-                    openFriendSuccessModal('Teman berhasil dihapus.');
+                    openFriendSuccessModal("Teman berhasil dihapus.");
                 } catch (err) {
-                    alert('Gagal menghapus: ' + err.message);
+                    alert("Gagal menghapus: " + err.message);
                 } finally {
                     hideLoading();
                 }
             }
 
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener("DOMContentLoaded", function () {
                 checkAuthOnLoad();
             });
 
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeMobileActionsMenu();
                     closeAddFriendModal();
                     closeAdminUsersModal();
                     closeAssignFriendsModal();
@@ -2707,6 +3109,18 @@
                     closeMainActionConfirmModal();
                     closeLogoutConfirmModal();
                     closeSplitWarningModal();
+                }
+            });
+
+            document.addEventListener("click", function (event) {
+                const dropdown = document.querySelector(
+                    ".mobile-actions-dropdown",
+                );
+                if (!dropdown) {
+                    return;
+                }
+                if (!dropdown.contains(event.target)) {
+                    closeMobileActionsMenu();
                 }
             });
         </script>
