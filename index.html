@@ -703,7 +703,7 @@
             /* Toast notification */
             #toast-container {
                 position: fixed;
-                bottom: 24px;
+                top: 24px;
                 left: 50%;
                 transform: translateX(-50%);
                 z-index: 9999;
@@ -726,7 +726,7 @@
                 font-weight: 500;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
                 opacity: 0;
-                transform: translateY(16px);
+                transform: translateY(-16px);
                 animation: toast-in 0.25s ease forwards, toast-out 0.3s ease 2.2s forwards;
                 white-space: nowrap;
             }
@@ -748,12 +748,12 @@
             }
 
             @keyframes toast-out {
-                to { opacity: 0; transform: translateY(16px); }
+                to { opacity: 0; transform: translateY(-16px); }
             }
 
             @media (max-width: 600px) {
                 #toast-container {
-                    bottom: 16px;
+                    top: 16px;
                     width: calc(100% - 32px);
                 }
                 .toast {
