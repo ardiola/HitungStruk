@@ -700,6 +700,69 @@
                 margin-bottom: 10px;
             }
 
+            /* Toast notification */
+            #toast-container {
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                pointer-events: none;
+            }
+
+            .toast {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: #1e293b;
+                color: #fff;
+                padding: 10px 18px;
+                border-radius: 24px;
+                font-size: 14px;
+                font-weight: 500;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+                opacity: 0;
+                transform: translateY(16px);
+                animation: toast-in 0.25s ease forwards, toast-out 0.3s ease 2.2s forwards;
+                white-space: nowrap;
+            }
+
+            .toast-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #22c55e;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                font-size: 12px;
+            }
+
+            @keyframes toast-in {
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            @keyframes toast-out {
+                to { opacity: 0; transform: translateY(16px); }
+            }
+
+            @media (max-width: 600px) {
+                #toast-container {
+                    bottom: 16px;
+                    width: calc(100% - 32px);
+                }
+                .toast {
+                    white-space: normal;
+                    width: 100%;
+                    border-radius: 14px;
+                }
+            }
+
             .loading-card {
                 width: 100%;
                 max-width: 320px;
@@ -1464,12 +1527,15 @@
                             placeholder="0"
                             min="0"
                             max="100"
-                            onchange="calculateTotal()"
                             value="0"
                             onclick="
                                 if (this.value === '0') {
                                     this.value = '';
                                 }
+                            "
+                            oninput="
+                                document.getElementById('discountAmountInput').value = '';
+                                calculateTotal();
                             "
                             onblur="
                                 if (this.value === '') {
@@ -1485,6 +1551,7 @@
                             id="discountAmountInput"
                             placeholder="0"
                             oninput="
+                                document.getElementById('discountPercent').value = '0';
                                 formatRupiah(this);
                                 calculateTotal();
                             "
@@ -2339,6 +2406,7 @@
                 // Update table and totals
                 renderTable();
                 calculateTotal();
+                showToast(isTax ? "Pajak berhasil ditambahkan." : "Item berhasil ditambahkan.");
             }
 
             // Remove item from the list
@@ -2663,6 +2731,15 @@
                     "Peringatan",
                     "Item belum ada di tabel. Tambahkan item terlebih dahulu sebelum menerapkan jumlah orang.",
                 );
+            }
+
+            function showToast(message) {
+                const container = document.getElementById("toast-container");
+                const toast = document.createElement("div");
+                toast.className = "toast";
+                toast.innerHTML = `<span class="toast-icon">✓</span><span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 2600);
             }
 
             function openWarningModal(title, message) {
@@ -3035,6 +3112,7 @@
 
                 renderTable();
                 calculateTotal();
+                showToast("Item berhasil ditambahkan.");
             }
 
             async function savePersonToDb() {
@@ -3566,5 +3644,7 @@
                 updateAdminUsersButtonVisibility();
             });
         </script>
+
+        <div id="toast-container"></div>
     </body>
 </html>
