@@ -2339,11 +2339,6 @@
                 // Update table and totals
                 renderTable();
                 calculateTotal();
-                openFriendSuccessModal(
-                    isTax
-                        ? "Pajak berhasil ditambahkan."
-                        : "Item berhasil ditambahkan.",
-                );
             }
 
             // Remove item from the list
@@ -3040,7 +3035,6 @@
 
                 renderTable();
                 calculateTotal();
-                openFriendSuccessModal("Item berhasil ditambahkan.");
             }
 
             async function savePersonToDb() {
