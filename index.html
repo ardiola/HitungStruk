@@ -1621,11 +1621,21 @@
                             <input
                                 type="number"
                                 id="itemSplitPeopleCount"
-                                placeholder="Jumlah orang"
+                                placeholder=""
                                 min="1"
                                 value="1"
+                                onclick="
+                                    if (this.value === '1') {
+                                        this.value = '';
+                                    }
+                                "
                                 oninput="handleItemCustomSplitInput()"
-                                onblur="normalizeItemCustomSplitInput()"
+                                onblur="
+                                    if (this.value === '') {
+                                        this.value = '1';
+                                    }
+                                    normalizeItemCustomSplitInput();
+                                "
                             />
                         </div>
                         <button
@@ -2632,6 +2642,13 @@
                     item.sharedWithNames = pendingItemSplitPeople.map((person) =>
                         getPersonDisplayName(person),
                     );
+                } else if (
+                    !isTax &&
+                    splitCount > 1 &&
+                    itemSplitMode &&
+                    itemSplitMode.value === "all"
+                ) {
+                    item.sharedAll = true;
                 }
 
                 // Add to items array
@@ -2674,6 +2691,8 @@
                     let nameDisplay = item.name;
                     if (item.isTax) {
                         nameDisplay = `<strong>${item.name} (Pajak)</strong>`;
+                    } else if (item.sharedAll) {
+                        nameDisplay = `${item.name} <span style="font-size:0.8em;color:#3498db;">(Dibagi: Semua Orang)</span>`;
                     } else if (
                         Array.isArray(item.sharedWith) &&
                         item.sharedWith.length > 0
