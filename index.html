@@ -602,6 +602,30 @@
                 padding: 10px 40px 10px 12px;
             }
 
+            .transfer-account-row span {
+                flex: 0 0 120px;
+            }
+
+            .summary-input-wide .transfer-select-wrapper {
+                flex: 2;
+            }
+
+            .summary-input-wide .transfer-select-wrapper select {
+                width: 100%;
+                padding: 10px 12px;
+                border: 2px solid #ddd;
+                border-radius: 6px;
+                font-size: 15px;
+                background-color: #fff;
+                color: #2c3e50;
+            }
+
+            .summary-input-wide .transfer-select-wrapper select:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+
             .person-inputs-wrapper {
                 margin: 25px 0;
                 padding: 20px;
@@ -943,6 +967,23 @@
                 padding: 8px 10px;
                 font-size: 13px;
                 white-space: nowrap;
+            }
+
+            .friend-actions {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .friend-edit-btn {
+                padding: 8px 10px;
+                font-size: 13px;
+                white-space: nowrap;
+                background-color: #2563eb;
+            }
+
+            .friend-edit-btn:hover {
+                background-color: #1d4ed8;
             }
 
             .friend-list-empty {
@@ -1923,6 +1964,21 @@
                         <span class="unit">Rp</span>
                     </div>
                 </div>
+                <div
+                    class="summary-input-wide transfer-account-row"
+                    id="transferAccountSection"
+                    style="display: none"
+                >
+                    <span>Transfer Rek:</span>
+                    <div class="input-wrapper transfer-select-wrapper">
+                        <select
+                            id="transferAccountSelect"
+                            onchange="handleTransferAccountChange(this.value)"
+                        >
+                            <option value="">Pilih rekening tujuan</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="summary-row-display">
                     <span>Subtotal:</span>
                     <span id="subtotal">Rp 0</span>
@@ -1934,6 +1990,10 @@
                 <div class="summary-row-display">
                     <span>Pajak:</span>
                     <span id="taxAmount">Rp 0</span>
+                </div>
+                <div class="summary-row-display">
+                    <span>Ditransfer ke Rekening:</span>
+                    <span id="transferAccountInfo">-</span>
                 </div>
                 <div class="summary-total">
                     <span>Total Akhir:</span>
@@ -2098,6 +2158,43 @@
             </div>
 
             <div
+                id="editFriendModal"
+                class="modal-overlay"
+                onclick="handleEditFriendModalBackdrop(event)"
+            >
+                <div class="modal-content">
+                    <h3 class="modal-title">Edit Teman</h3>
+                    <div class="input-group">
+                        <label for="editFriendName">Nama:</label>
+                        <input
+                            type="text"
+                            id="editFriendName"
+                            placeholder="Nama teman"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label for="editFriendRekening">No Rekening:</label>
+                        <input
+                            type="text"
+                            id="editFriendRekening"
+                            placeholder="Nomor rekening"
+                        />
+                    </div>
+                    <div class="modal-actions">
+                        <button
+                            class="btn-add"
+                            onclick="closeEditFriendModal()"
+                        >
+                            Batal
+                        </button>
+                        <button class="btn-add" onclick="confirmEditFriend()">
+                            Simpan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div
                 id="friendSuccessModal"
                 class="modal-overlay"
                 onclick="handleFriendSuccessModalBackdrop(event)"
@@ -2253,10 +2350,12 @@
             let items = [];
             let peopleCache = [];
             let selectedSplitPeople = [];
+            let transferAccountFriendId = null;
             let pendingItemSplitPeople = [];
             let appliedSplitCount = 1;
             let isSplitConfigurationSaved = true;
             let pendingDeleteFriend = null;
+            let pendingEditFriend = null;
             let pendingMainAction = null;
             let authToken = localStorage.getItem("authToken") || "";
             let authMode = "login";
@@ -2284,6 +2383,7 @@
                 peopleCache = [];
                 adminUsersCache = [];
                 pendingDeleteFriend = null;
+                pendingEditFriend = null;
                 pendingDeleteUser = null;
 
                 const friendsList = document.getElementById("friendsList");
@@ -2296,6 +2396,7 @@
                 }
                 closeAssignFriendsModal();
                 closeItemPeoplePickerModal();
+                closeEditFriendModal();
             }
 
             function togglePasswordVisibility(inputId, buttonId) {
@@ -2471,6 +2572,7 @@
                 }
                 closeAdminUsersModal();
                 closeDeleteUserModal();
+                closeEditFriendModal();
                 closeLogoutConfirmModal();
                 closeMobileActionsMenu();
             }
@@ -2828,12 +2930,18 @@
                 }
 
                 if (isNaN(price) || price <= 0) {
-                    alert(`${priceLabel} harus berupa angka positif!`);
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        `${priceLabel} harus berupa angka positif!`,
+                    );
                     return;
                 }
 
                 if (isNaN(quantity) || quantity < 1) {
-                    alert("Jumlah harus berupa angka bulat positif!");
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        "Jumlah harus berupa angka bulat positif!",
+                    );
                     return;
                 }
 
@@ -3120,14 +3228,7 @@
                 const existingBills = document.querySelector(
                     ".person-bills-section",
                 );
-                const personInputsContainer = document.getElementById(
-                    "personInputsContainer",
-                );
-                const hasPersonInputs =
-                    !!personInputsContainer &&
-                    personInputsContainer.innerHTML.trim() !== "";
-
-                if (splitCount <= 1 || !hasPersonInputs) {
+                if (splitCount <= 1) {
                     if (existingBills) {
                         existingBills.remove();
                     }
@@ -3168,6 +3269,89 @@
                     return matchedPerson.name;
                 }
                 return `Orang ${personNumber}`;
+            }
+
+            function getTransferAccountCandidates() {
+                return selectedSplitPeople
+                    .filter((person) => Number.isInteger(person.friendId))
+                    .map((person) => ({
+                        friendId: person.friendId,
+                        name: person.name || `Orang ${person.personIndex}`,
+                        noRekening: person.noRekening || "-",
+                    }));
+            }
+
+            function renderTransferAccountSelect() {
+                const section = document.getElementById("transferAccountSection");
+                const select = document.getElementById("transferAccountSelect");
+                if (!section || !select) {
+                    return;
+                }
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                const candidates = getTransferAccountCandidates();
+                if (
+                    splitCount <= 1 ||
+                    candidates.length === 0 ||
+                    !isSplitConfigurationSaved
+                ) {
+                    section.style.display = "none";
+                    select.innerHTML = '<option value="">Pilih rekening tujuan</option>';
+                    transferAccountFriendId = null;
+                    updateTransferAccountInfo();
+                    return;
+                }
+                const validIds = new Set(candidates.map((candidate) => candidate.friendId));
+                if (!Number.isInteger(transferAccountFriendId) || !validIds.has(transferAccountFriendId)) {
+                    transferAccountFriendId = null;
+                }
+                const placeholderSelected = Number.isInteger(transferAccountFriendId)
+                    ? ""
+                    : " selected";
+                const optionsHtml = [
+                    `<option value=""${placeholderSelected}>Pilih rekening</option>`,
+                    ...candidates.map((candidate) => {
+                        const isSelected =
+                            Number.isInteger(transferAccountFriendId) &&
+                            candidate.friendId === transferAccountFriendId;
+                        const selectedAttr = isSelected ? " selected" : "";
+                        const label = `${candidate.name} - ${candidate.noRekening}`;
+                        return `<option value="${candidate.friendId}"${selectedAttr}>${label}</option>`;
+                    }),
+                ].join("");
+                section.style.display = "flex";
+                select.innerHTML = optionsHtml;
+                updateTransferAccountInfo();
+            }
+
+            function handleTransferAccountChange(selectedFriendId) {
+                const parsedFriendId = parseInt(selectedFriendId, 10);
+                if (!Number.isInteger(parsedFriendId)) {
+                    transferAccountFriendId = null;
+                    updateTransferAccountInfo();
+                    return;
+                }
+                transferAccountFriendId = parsedFriendId;
+                updateTransferAccountInfo();
+            }
+
+            function updateTransferAccountInfo() {
+                const infoElement = document.getElementById("transferAccountInfo");
+                if (!infoElement) {
+                    return;
+                }
+                if (!Number.isInteger(transferAccountFriendId)) {
+                    infoElement.textContent = "-";
+                    return;
+                }
+                const selected = getTransferAccountCandidates().find(
+                    (candidate) => candidate.friendId === transferAccountFriendId,
+                );
+                if (!selected) {
+                    infoElement.textContent = "-";
+                    return;
+                }
+                infoElement.textContent = `${selected.name} - ${selected.noRekening}`;
             }
 
             function renderItemPersonOptions() {
@@ -3436,6 +3620,7 @@
             function resetAll() {
                 items = [];
                 selectedSplitPeople = [];
+                transferAccountFriendId = null;
                 document.getElementById("itemName").value = "";
                 document.getElementById("itemPrice").value = "";
                 document.getElementById("itemQuantity").value = "1";
@@ -3452,6 +3637,7 @@
                 appliedSplitCount = 1;
                 isSplitConfigurationSaved = true;
                 renderItemPersonOptions();
+                renderTransferAccountSelect();
                 // Clear person inputs container
                 document.getElementById("personInputsContainer").innerHTML = "";
                 // Remove person bills section
@@ -3474,6 +3660,7 @@
                 // Generate person inputs based on initial splitCount
                 generatePersonInputs();
                 renderItemPersonOptions();
+                renderTransferAccountSelect();
                 calculateTotal();
             });
 
@@ -3497,13 +3684,16 @@
 
                 if (splitCount <= 1) {
                     selectedSplitPeople = [];
+                    transferAccountFriendId = null;
                     isSplitConfigurationSaved = true;
                     generatePersonInputs();
+                    renderTransferAccountSelect();
                     calculateTotal();
                     return;
                 }
 
                 isSplitConfigurationSaved = false;
+                renderTransferAccountSelect();
                 openAssignFriendsModal(splitCount);
             }
 
@@ -3717,13 +3907,19 @@
 
             async function exportStrukAsImage() {
                 if (typeof window.html2canvas !== "function") {
-                    alert("Fitur simpan gambar belum tersedia.");
+                    openWarningModal(
+                        "Fitur Belum Tersedia",
+                        "Fitur simpan gambar belum tersedia.",
+                    );
                     return;
                 }
 
                 const sourceContainer = document.getElementById("appContainer");
                 if (!sourceContainer) {
-                    alert("Area struk tidak ditemukan.");
+                    openWarningModal(
+                        "Area Tidak Ditemukan",
+                        "Area struk tidak ditemukan.",
+                    );
                     return;
                 }
 
@@ -3761,7 +3957,10 @@
                         "Gambar struk (JPEG) berhasil diunduh.",
                     );
                 } catch (err) {
-                    alert("Gagal membuat gambar: " + err.message);
+                    openWarningModal(
+                        "Gagal Membuat Gambar",
+                        "Gagal membuat gambar: " + err.message,
+                    );
                 } finally {
                     if (captureWrapper && captureWrapper.parentNode) {
                         captureWrapper.parentNode.removeChild(captureWrapper);
@@ -3952,12 +4151,18 @@
                 }
 
                 if (isNaN(price) || price <= 0) {
-                    alert("Harga harus berupa angka positif!");
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        "Harga harus berupa angka positif!",
+                    );
                     return;
                 }
 
                 if (isNaN(quantity) || quantity < 1) {
-                    alert("Jumlah harus berupa angka bulat positif!");
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        "Jumlah harus berupa angka bulat positif!",
+                    );
                     return;
                 }
 
@@ -4000,11 +4205,14 @@
                 const noRekening = (rekeningInput?.value || "").trim();
 
                 if (!nama) {
-                    alert("Nama tidak boleh kosong!");
+                    openWarningModal("Input Tidak Valid", "Nama tidak boleh kosong!");
                     return;
                 }
                 if (!noRekening) {
-                    alert("Nomor rekening tidak boleh kosong!");
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        "Nomor rekening tidak boleh kosong!",
+                    );
                     return;
                 }
                 const isDuplicateName = peopleCache.some(
@@ -4014,7 +4222,7 @@
                             .toLowerCase() === nama.toLowerCase(),
                 );
                 if (isDuplicateName) {
-                    alert("Nama teman sudah ada!");
+                    openWarningModal("Nama Duplikat", "Nama teman sudah ada!");
                     return;
                 }
 
@@ -4044,7 +4252,10 @@
                         openFriendSuccessModal("Teman berhasil ditambahkan.");
                     }
                 } catch (err) {
-                    alert("Gagal menyimpan: " + err.message);
+                    openWarningModal(
+                        "Gagal Menyimpan",
+                        "Gagal menyimpan: " + err.message,
+                    );
                 } finally {
                     hideLoading();
                 }
@@ -4121,7 +4332,10 @@
                         listContainer.innerHTML =
                             '<div class="friend-list-empty">Gagal memuat daftar user.</div>';
                     }
-                    alert("Gagal memuat user: " + err.message);
+                    openWarningModal(
+                        "Gagal Memuat User",
+                        "Gagal memuat user: " + err.message,
+                    );
                 }
             }
 
@@ -4220,7 +4434,10 @@
                         `User ${username} berhasil dihapus.`,
                     );
                 } catch (err) {
-                    alert("Gagal menghapus user: " + err.message);
+                    openWarningModal(
+                        "Gagal Menghapus User",
+                        "Gagal menghapus user: " + err.message,
+                    );
                 } finally {
                     hideLoading();
                 }
@@ -4235,6 +4452,7 @@
                     syncSplitCountInputLimit(true);
                     renderFriendsList(peopleCache);
                     renderAssignFriendsFields();
+                    renderTransferAccountSelect();
                 } catch (err) {
                     const listContainer =
                         document.getElementById("friendsList");
@@ -4349,6 +4567,9 @@
                         name: selectedPerson
                             ? selectedPerson.nama
                             : `Orang ${i}`,
+                        noRekening: selectedPerson
+                            ? selectedPerson.no_rekening || "-"
+                            : "-",
                     });
                 }
 
@@ -4362,6 +4583,7 @@
                 }
 
                 isSplitConfigurationSaved = true;
+                renderTransferAccountSelect();
                 generatePersonInputs();
                 for (let i = 1; i <= splitCount; i++) {
                     const displayName = getPersonDisplayName(i);
@@ -4416,6 +4638,16 @@
                     info.appendChild(name);
                     info.appendChild(rekening);
 
+                    const actions = document.createElement("div");
+                    actions.className = "friend-actions";
+
+                    const editBtn = document.createElement("button");
+                    editBtn.className = "btn-add friend-edit-btn";
+                    editBtn.textContent = "Edit";
+                    editBtn.type = "button";
+                    editBtn.onclick = () =>
+                        openEditFriendModal(person.id, person.nama, person.no_rekening);
+
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "btn-reset friend-delete-btn";
                     deleteBtn.textContent = "Hapus";
@@ -4423,10 +4655,47 @@
                     deleteBtn.onclick = () =>
                         openDeleteFriendModal(person.id, person.nama);
 
+                    actions.appendChild(editBtn);
+                    actions.appendChild(deleteBtn);
+
                     row.appendChild(info);
-                    row.appendChild(deleteBtn);
+                    row.appendChild(actions);
                     listContainer.appendChild(row);
                 });
+            }
+
+            function openEditFriendModal(personId, personName, noRekening) {
+                pendingEditFriend = {
+                    id: personId,
+                    name: personName || "",
+                    noRekening: noRekening || "",
+                };
+                const nameInput = document.getElementById("editFriendName");
+                const rekeningInput = document.getElementById("editFriendRekening");
+                if (nameInput) {
+                    nameInput.value = pendingEditFriend.name;
+                }
+                if (rekeningInput) {
+                    rekeningInput.value = pendingEditFriend.noRekening;
+                }
+                const modal = document.getElementById("editFriendModal");
+                if (modal) {
+                    modal.classList.add("show");
+                }
+            }
+
+            function closeEditFriendModal() {
+                const modal = document.getElementById("editFriendModal");
+                if (modal) {
+                    modal.classList.remove("show");
+                }
+                pendingEditFriend = null;
+            }
+
+            function handleEditFriendModalBackdrop(event) {
+                if (event.target.id === "editFriendModal") {
+                    closeEditFriendModal();
+                }
             }
 
             function openDeleteFriendModal(personId, personName) {
@@ -4451,6 +4720,85 @@
             function handleDeleteFriendModalBackdrop(event) {
                 if (event.target.id === "deleteFriendModal") {
                     closeDeleteFriendModal();
+                }
+            }
+
+            async function confirmEditFriend() {
+                if (!pendingEditFriend || !pendingEditFriend.id) {
+                    return;
+                }
+
+                const nameInput = document.getElementById("editFriendName");
+                const rekeningInput = document.getElementById("editFriendRekening");
+                const nama = String(nameInput?.value || "").trim();
+                const noRekening = String(rekeningInput?.value || "").trim();
+
+                if (!nama) {
+                    openWarningModal("Input Tidak Valid", "Nama tidak boleh kosong!");
+                    return;
+                }
+                if (!noRekening) {
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        "Nomor rekening tidak boleh kosong!",
+                    );
+                    return;
+                }
+
+                const isDuplicateName = peopleCache.some(
+                    (person) =>
+                        Number(person.id) !== Number(pendingEditFriend.id) &&
+                        String(person.nama || "")
+                            .trim()
+                            .toLowerCase() === nama.toLowerCase(),
+                );
+                if (isDuplicateName) {
+                    openWarningModal("Nama Duplikat", "Nama teman sudah ada!");
+                    return;
+                }
+
+                try {
+                    showLoading("Memperbarui data...");
+                    const response = await apiFetch(
+                        `/api/people/${pendingEditFriend.id}`,
+                        {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ nama, no_rekening: noRekening }),
+                        },
+                    );
+                    if (!response.ok) {
+                        const contentType =
+                            String(response.headers.get("content-type") || "").toLowerCase();
+                        if (contentType.includes("application/json")) {
+                            const errBody = await response.json();
+                            throw new Error(
+                                errBody.error || "Gagal memperbarui teman",
+                            );
+                        }
+                        const errText = await response.text();
+                        if (response.status === 404 || response.status === 405) {
+                            throw new Error(
+                                "Endpoint update belum aktif. Restart server backend terlebih dahulu.",
+                            );
+                        }
+                        throw new Error(
+                            errText
+                                ? `Gagal memperbarui teman (HTTP ${response.status})`
+                                : "Gagal memperbarui teman",
+                        );
+                    }
+
+                    await loadPeopleFromDb();
+                    closeEditFriendModal();
+                    openFriendSuccessModal("Teman berhasil diperbarui.");
+                } catch (err) {
+                    openWarningModal(
+                        "Gagal Memperbarui",
+                        "Gagal memperbarui: " + err.message,
+                    );
+                } finally {
+                    hideLoading();
                 }
             }
 
@@ -4500,7 +4848,10 @@
                     pendingDeleteFriend = null;
                     openFriendSuccessModal("Teman berhasil dihapus.");
                 } catch (err) {
-                    alert("Gagal menghapus: " + err.message);
+                    openWarningModal(
+                        "Gagal Menghapus",
+                        "Gagal menghapus: " + err.message,
+                    );
                 } finally {
                     hideLoading();
                 }
@@ -4530,6 +4881,7 @@
                     closeAdminUsersModal();
                     closeAssignFriendsModal();
                     closeDeleteFriendModal();
+                    closeEditFriendModal();
                     closeDeleteUserModal();
                     closeFriendSuccessModal();
                     closeMainActionConfirmModal();

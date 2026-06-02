@@ -1,4 +1,4 @@
-const CACHE_NAME = "struk-tagihan-v1";
+const CACHE_NAME = "struk-tagihan-v2";
 const STATIC_ASSETS = ["/", "/index.html", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -34,6 +34,23 @@ self.addEventListener("fetch", (event) => {
         return;
     }
     if (url.pathname.startsWith("/api/")) {
+        return;
+    }
+
+    if (request.mode === "navigate") {
+        event.respondWith(
+            fetch(request)
+                .then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const clonedResponse = networkResponse.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put("/index.html", clonedResponse);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => caches.match("/index.html")),
+        );
         return;
     }
 

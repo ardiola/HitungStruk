@@ -42,6 +42,7 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+        scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'"],
@@ -62,7 +63,7 @@ app.use(
       return callback(new Error('Origin tidak diizinkan oleh CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
@@ -655,6 +656,56 @@ app.delete('/api/people/:id', authenticate, async (req, res) => {
     res.json({ deleted: true });
   } catch (err) {
     sendServerError(res, err, 'people-delete');
+  }
+});
+
+app.put('/api/people/:id', authenticate, async (req, res) => {
+  const peopleId = Number(req.params.id);
+  const nama = sanitizeTextInput(req.body?.nama);
+  const noRekening = sanitizeRekening(req.body?.no_rekening);
+
+  if (!isValidPositiveInt(peopleId)) {
+    return res.status(400).json({ error: 'ID teman tidak valid' });
+  }
+  if (!nama || !noRekening) {
+    return res.status(400).json({ error: 'nama dan no_rekening wajib diisi' });
+  }
+  if (nama.length > MAX_PERSON_NAME_LENGTH) {
+    return res.status(400).json({ error: `nama maksimal ${MAX_PERSON_NAME_LENGTH} karakter` });
+  }
+  if (!/^\d{5,30}$/.test(noRekening) || noRekening.length > MAX_REKENING_LENGTH) {
+    return res.status(400).json({ error: 'no_rekening harus berupa 5-30 digit angka' });
+  }
+
+  try {
+    const currentResult = await db.execute({
+      sql: 'SELECT id FROM people WHERE id = ? AND user_id = ? LIMIT 1',
+      args: [peopleId, req.user.id],
+    });
+    if (currentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Data teman tidak ditemukan' });
+    }
+
+    const duplicateCheck = await db.execute({
+      sql: `SELECT id FROM people
+            WHERE user_id = ? AND LOWER(TRIM(nama)) = LOWER(TRIM(?)) AND id != ?
+            LIMIT 1`,
+      args: [req.user.id, nama, peopleId],
+    });
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(409).json({ error: 'Nama teman sudah ada' });
+    }
+
+    const updateResult = await db.execute({
+      sql: 'UPDATE people SET nama = ?, no_rekening = ? WHERE id = ? AND user_id = ?',
+      args: [nama, noRekening, peopleId, req.user.id],
+    });
+    void updateResult;
+
+    res.json({ updated: true, id: peopleId, nama, no_rekening: noRekening });
+  } catch (err) {
+    sendServerError(res, err, 'people-update');
   }
 });
 
