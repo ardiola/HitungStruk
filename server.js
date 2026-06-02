@@ -3,6 +3,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const { createClient } = require('@libsql/client');
 const crypto = require('crypto');
 const util = require('util');
@@ -13,10 +16,85 @@ const app = express();
 const port = 3000;
 const dbUrl = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
+const MAX_JSON_BODY_SIZE = '64kb';
+const MAX_USERNAME_LENGTH = 32;
+const MAX_PASSWORD_LENGTH = 128;
+const MAX_PERSON_NAME_LENGTH = 80;
+const MAX_REKENING_LENGTH = 30;
+const MAX_SPLIT_COUNT = 100;
+const MAX_PERSON_BILLS = 200;
+const AUTH_COOKIE_NAME = 'auth_token';
+const LOGIN_LOCK_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LOCK_THRESHOLD = 8;
+const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000;
 
-app.use(cors());
-app.use(bodyParser.json());
+const parsedAllowedOrigins = String(process.env.CORS_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+const allowedOrigins = new Set(parsedAllowedOrigins);
+const failedLoginAttempts = new Map();
+
+app.set('trust proxy', 1);
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }),
+);
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.size === 0 || allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Origin tidak diizinkan oleh CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
+app.use(
+  bodyParser.json({
+    limit: MAX_JSON_BODY_SIZE,
+    strict: true,
+    type: 'application/json',
+  }),
+);
+app.use(cookieParser());
 app.use(express.static(__dirname));
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 25,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Terlalu banyak percobaan login/register. Coba lagi beberapa saat.' },
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Terlalu banyak permintaan. Coba lagi beberapa saat.' },
+});
+
+app.use('/api/auth', authLimiter);
+app.use('/api', apiLimiter);
+app.use('/api', rejectSuspiciousRequest);
 
 if (!dbUrl || !authToken) {
   throw new Error('TURSO_DATABASE_URL dan TURSO_AUTH_TOKEN wajib diisi');
@@ -41,6 +119,156 @@ function normalizeRow(row) {
 
 function normalizeRows(rows) {
   return rows.map((row) => normalizeRow(row));
+}
+
+function sanitizeTextInput(value) {
+  return String(value || '')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function sanitizeUsername(value) {
+  return sanitizeTextInput(value).toLowerCase();
+}
+
+function sanitizeRekening(value) {
+  return String(value || '').replace(/[^\d]/g, '').trim();
+}
+
+function isValidUsername(username) {
+  return /^[a-z0-9._-]{3,32}$/.test(username);
+}
+
+function isValidPassword(password) {
+  return typeof password === 'string' && password.length >= 8 && password.length <= MAX_PASSWORD_LENGTH;
+}
+
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isValidPositiveInt(value, maxValue = Number.MAX_SAFE_INTEGER) {
+  return Number.isInteger(value) && value > 0 && value <= maxValue;
+}
+
+function containsSqlInjectionPattern(value) {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return /(\bunion\s+select\b|\bor\s+['"]?\d+['"]?\s*=\s*['"]?\d+|\binformation_schema\b|\bsleep\s*\(|\bbenchmark\s*\(|--|\/\*|\*\/)/i.test(value);
+}
+
+function hasSuspiciousPayload(input) {
+  if (typeof input === 'string') {
+    return containsSqlInjectionPattern(input);
+  }
+  if (Array.isArray(input)) {
+    return input.some((item) => hasSuspiciousPayload(item));
+  }
+  if (input && typeof input === 'object') {
+    return Object.entries(input).some(([key, value]) => {
+      if (/password/i.test(String(key))) {
+        return false;
+      }
+      return hasSuspiciousPayload(value);
+    });
+  }
+  return false;
+}
+
+function rejectSuspiciousRequest(req, res, next) {
+  if (
+    hasSuspiciousPayload(req.query) ||
+    hasSuspiciousPayload(req.params) ||
+    hasSuspiciousPayload(req.body)
+  ) {
+    return res.status(400).json({ error: 'Permintaan terdeteksi mencurigakan' });
+  }
+  return next();
+}
+
+function sendServerError(res, err, context) {
+  if (context) {
+    console.error(`[${context}]`, err);
+  } else {
+    console.error(err);
+  }
+  return res.status(500).json({ error: 'Terjadi kesalahan pada server' });
+}
+
+function getClientIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  if (forwarded) {
+    return forwarded;
+  }
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
+function getLoginAttemptKey(req, username) {
+  return `${sanitizeUsername(username)}::${getClientIp(req)}`;
+}
+
+function cleanupExpiredLoginAttempt(key, now) {
+  const record = failedLoginAttempts.get(key);
+  if (!record) {
+    return;
+  }
+  if (record.lockUntil && record.lockUntil > now) {
+    return;
+  }
+  if (now - record.lastAttemptAt > LOGIN_LOCK_WINDOW_MS) {
+    failedLoginAttempts.delete(key);
+  }
+}
+
+function getLoginBackoffMs(failedCount) {
+  if (failedCount <= 1) {
+    return 0;
+  }
+  return Math.min(500 * (failedCount - 1), 4000);
+}
+
+async function applyLoginFailure(req, username) {
+  const key = getLoginAttemptKey(req, username);
+  const now = Date.now();
+  const current = failedLoginAttempts.get(key) || {
+    failedCount: 0,
+    lastAttemptAt: now,
+    lockUntil: 0,
+  };
+  current.failedCount += 1;
+  current.lastAttemptAt = now;
+  if (current.failedCount >= LOGIN_LOCK_THRESHOLD) {
+    current.lockUntil = now + LOGIN_LOCK_DURATION_MS;
+  }
+  failedLoginAttempts.set(key, current);
+  const backoffMs = getLoginBackoffMs(current.failedCount);
+  if (backoffMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, backoffMs));
+  }
+  return current;
+}
+
+function clearLoginFailure(req, username) {
+  failedLoginAttempts.delete(getLoginAttemptKey(req, username));
+}
+
+function getCookieOptions(req) {
+  const origin = String(req.headers.origin || '').trim();
+  const host = req.get('host');
+  const protocol = req.protocol || 'http';
+  const currentOrigin = host ? `${protocol}://${host}` : '';
+  const isCrossOrigin = !!origin && !!currentOrigin && origin !== currentOrigin;
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction || isCrossOrigin,
+    sameSite: isCrossOrigin ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
+  };
 }
 
 async function initDatabase() {
@@ -145,8 +373,10 @@ function generateToken() {
 
 async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization || '';
-  const [scheme, token] = authHeader.split(' ');
-  if (scheme !== 'Bearer' || !token) {
+  const [scheme, bearerToken] = authHeader.split(' ');
+  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+  const token = scheme === 'Bearer' && bearerToken ? bearerToken : cookieToken;
+  if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -166,7 +396,7 @@ async function authenticate(req, res, next) {
     req.token = token;
     next();
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'authenticate');
   }
 }
 
@@ -182,10 +412,18 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/auth/register', async (req, res) => {
-  const username = String(req.body?.username || '').trim();
+  const username = sanitizeUsername(req.body?.username);
   const password = String(req.body?.password || '');
   if (!username || !password) {
     return res.status(400).json({ error: 'username dan password wajib diisi' });
+  }
+  if (!isValidUsername(username)) {
+    return res.status(400).json({
+      error: `username harus 3-${MAX_USERNAME_LENGTH} karakter (huruf kecil, angka, titik, underscore, atau dash)`,
+    });
+  }
+  if (!isValidPassword(password)) {
+    return res.status(400).json({ error: 'password harus 8-128 karakter' });
   }
 
   try {
@@ -213,15 +451,36 @@ app.post('/api/auth/register', async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'auth-register');
   }
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const username = String(req.body?.username || '').trim();
+  const username = sanitizeUsername(req.body?.username);
   const password = String(req.body?.password || '');
   if (!username || !password) {
     return res.status(400).json({ error: 'username dan password wajib diisi' });
+  }
+  if (!isValidUsername(username)) {
+    return res.status(400).json({ error: 'format username tidak valid' });
+  }
+  if (!isValidPassword(password)) {
+    return res.status(400).json({ error: 'format password tidak valid' });
+  }
+
+  const loginAttemptKey = getLoginAttemptKey(req, username);
+  const now = Date.now();
+  cleanupExpiredLoginAttempt(loginAttemptKey, now);
+  const loginAttemptState = failedLoginAttempts.get(loginAttemptKey);
+  if (loginAttemptState && loginAttemptState.lockUntil > now) {
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((loginAttemptState.lockUntil - now) / 1000),
+    );
+    res.setHeader('Retry-After', String(retryAfterSeconds));
+    return res.status(429).json({
+      error: `Akun sementara dikunci. Coba lagi dalam ${retryAfterSeconds} detik.`,
+    });
   }
 
   try {
@@ -231,21 +490,26 @@ app.post('/api/auth/login', async (req, res) => {
     });
 
     if (userResult.rows.length === 0) {
+      await applyLoginFailure(req, username);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
 
     const user = normalizeRow(userResult.rows[0]);
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
+      await applyLoginFailure(req, username);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
+    clearLoginFailure(req, username);
 
     const token = generateToken();
-    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
     await db.execute({
       sql: 'INSERT INTO auth_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
       args: [user.id, token, expiresAt],
     });
+
+    res.cookie(AUTH_COOKIE_NAME, token, getCookieOptions(req));
 
     res.json({
       token,
@@ -256,7 +520,7 @@ app.post('/api/auth/login', async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'auth-login');
   }
 });
 
@@ -271,7 +535,7 @@ app.get('/api/users', authenticate, authorizeAdmin, async (req, res) => {
     });
     res.json(normalizeRows(result.rows));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'users-list');
   }
 });
 
@@ -308,7 +572,7 @@ app.delete('/api/users/:id', authenticate, authorizeAdmin, async (req, res) => {
 
     res.json({ deleted: true, user_id: targetUserId });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'users-delete');
   }
 });
 
@@ -318,9 +582,10 @@ app.post('/api/auth/logout', authenticate, async (req, res) => {
       sql: 'DELETE FROM auth_tokens WHERE token = ?',
       args: [req.token],
     });
+    res.clearCookie(AUTH_COOKIE_NAME, { path: '/' });
     res.json({ loggedOut: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'auth-logout');
   }
 });
 
@@ -332,16 +597,22 @@ app.get('/api/people', authenticate, async (req, res) => {
     });
     res.json(normalizeRows(result.rows));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'people-list');
   }
 });
 
 app.post('/api/people', authenticate, async (req, res) => {
-  const nama = String(req.body?.nama || '').trim();
-  const noRekening = String(req.body?.no_rekening || '').trim();
+  const nama = sanitizeTextInput(req.body?.nama);
+  const noRekening = sanitizeRekening(req.body?.no_rekening);
 
   if (!nama || !noRekening) {
     return res.status(400).json({ error: 'nama dan no_rekening wajib diisi' });
+  }
+  if (nama.length > MAX_PERSON_NAME_LENGTH) {
+    return res.status(400).json({ error: `nama maksimal ${MAX_PERSON_NAME_LENGTH} karakter` });
+  }
+  if (!/^\d{5,30}$/.test(noRekening) || noRekening.length > MAX_REKENING_LENGTH) {
+    return res.status(400).json({ error: 'no_rekening harus berupa 5-30 digit angka' });
   }
 
   try {
@@ -363,15 +634,19 @@ app.post('/api/people', authenticate, async (req, res) => {
     const inserted = normalizeRow(insertResult.rows[0] || {});
     res.json({ id: inserted.id, nama, no_rekening: noRekening });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'people-create');
   }
 });
 
 app.delete('/api/people/:id', authenticate, async (req, res) => {
+  const peopleId = Number(req.params.id);
+  if (!isValidPositiveInt(peopleId)) {
+    return res.status(400).json({ error: 'ID teman tidak valid' });
+  }
   try {
     const deleteResult = await db.execute({
       sql: 'DELETE FROM people WHERE id = ? AND user_id = ?',
-      args: [req.params.id, req.user.id],
+      args: [peopleId, req.user.id],
     });
     const affectedRows = normalizeValue(deleteResult.rowsAffected || 0);
     if (affectedRows === 0) {
@@ -379,32 +654,79 @@ app.delete('/api/people/:id', authenticate, async (req, res) => {
     }
     res.json({ deleted: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'people-delete');
   }
 });
 
 app.post('/api/bills', authenticate, async (req, res) => {
   const { total_amount, discount_amount, tax_amount, grand_total, split_count, personBills } = req.body;
+  const totalAmount = Number(total_amount);
+  const discountAmount = Number(discount_amount ?? 0);
+  const taxAmount = Number(tax_amount ?? 0);
+  const grandTotal = Number(grand_total);
+  const splitCount = Number(split_count);
+
+  if (
+    !isFiniteNumber(totalAmount) ||
+    !isFiniteNumber(discountAmount) ||
+    !isFiniteNumber(taxAmount) ||
+    !isFiniteNumber(grandTotal) ||
+    totalAmount < 0 ||
+    discountAmount < 0 ||
+    taxAmount < 0 ||
+    grandTotal < 0
+  ) {
+    return res.status(400).json({ error: 'Nilai total, diskon, pajak, dan grand total harus angka valid' });
+  }
+  if (!isValidPositiveInt(splitCount, MAX_SPLIT_COUNT)) {
+    return res.status(400).json({ error: `split_count harus bilangan bulat 1-${MAX_SPLIT_COUNT}` });
+  }
+  if (personBills != null && !Array.isArray(personBills)) {
+    return res.status(400).json({ error: 'personBills harus berupa array' });
+  }
+  if (Array.isArray(personBills) && personBills.length > MAX_PERSON_BILLS) {
+    return res.status(400).json({ error: `personBills maksimal ${MAX_PERSON_BILLS} item` });
+  }
 
   try {
     const billInsertResult = await db.execute({
       sql: 'INSERT INTO bills (total_amount, discount_amount, tax_amount, grand_total, split_count) VALUES (?, ?, ?, ?, ?) RETURNING id',
-      args: [total_amount, discount_amount, tax_amount, grand_total, split_count],
+      args: [totalAmount, discountAmount, taxAmount, grandTotal, splitCount],
     });
     const billId = normalizeValue(billInsertResult.rows[0]?.id);
 
     if (personBills && personBills.length > 0) {
       for (const personBill of personBills) {
+        const billItemName = sanitizeTextInput(personBill?.name);
+        const billPersonName = sanitizeTextInput(personBill?.personName);
+        const billItemAmount = Number(personBill?.amount);
+        const rawPersonId = personBill?.personId;
+        const billPersonId =
+          rawPersonId == null || rawPersonId === '' ? null : Number(rawPersonId);
+
+        if (!billItemName || billItemName.length > MAX_PERSON_NAME_LENGTH) {
+          return res.status(400).json({ error: `Nama item bill wajib diisi dan maksimal ${MAX_PERSON_NAME_LENGTH} karakter` });
+        }
+        if (!isFiniteNumber(billItemAmount) || billItemAmount < 0) {
+          return res.status(400).json({ error: 'Nominal item bill harus angka valid' });
+        }
+        if (billPersonName && billPersonName.length > MAX_PERSON_NAME_LENGTH) {
+          return res.status(400).json({ error: `Nama orang maksimal ${MAX_PERSON_NAME_LENGTH} karakter` });
+        }
+        if (billPersonId !== null && !isValidPositiveInt(billPersonId)) {
+          return res.status(400).json({ error: 'personId pada bill item tidak valid' });
+        }
+
         await db.execute({
           sql: 'INSERT INTO bill_items (bill_id, item_name, item_amount, person_id, person_name) VALUES (?, ?, ?, ?, ?)',
-          args: [billId, personBill.name, personBill.amount, personBill.personId, personBill.personName],
+          args: [billId, billItemName, billItemAmount, billPersonId, billPersonName || null],
         });
       }
     }
 
     res.json({ id: billId });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'bills-create');
   }
 });
 
@@ -413,29 +735,36 @@ app.get('/api/bills', authenticate, async (req, res) => {
     const result = await db.execute('SELECT * FROM bills ORDER BY created_at DESC LIMIT 50');
     res.json(normalizeRows(result.rows));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'bills-list');
   }
 });
 
 app.get('/api/bills/:id', authenticate, async (req, res) => {
+  const billId = Number(req.params.id);
+  if (!isValidPositiveInt(billId)) {
+    return res.status(400).json({ error: 'ID bill tidak valid' });
+  }
   try {
     const result = await db.execute({
       sql: 'SELECT * FROM bills WHERE id = ?',
-      args: [req.params.id],
+      args: [billId],
     });
     const bill = result.rows[0] ? normalizeRow(result.rows[0]) : null;
     res.json(bill);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendServerError(res, err, 'bills-detail');
   }
 });
 
 app.use((err, req, res, next) => {
+  if (err && String(err.message || '').includes('CORS')) {
+    return res.status(403).json({ error: 'Origin tidak diizinkan' });
+  }
   if (req.path && req.path.startsWith('/api/')) {
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
       return res.status(400).json({ error: 'Format JSON tidak valid' });
     }
-    return res.status(500).json({ error: err.message || 'Internal server error' });
+    return sendServerError(res, err, 'api-unhandled');
   }
 
   return next(err);

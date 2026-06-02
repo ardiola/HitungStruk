@@ -78,6 +78,60 @@
                 cursor: pointer;
             }
 
+            .password-input-wrap {
+                position: relative;
+            }
+
+            .password-input-wrap input {
+                width: 100%;
+                padding-right: 44px;
+            }
+
+            .password-toggle-btn {
+                position: absolute;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 30px;
+                height: 30px;
+                border: none;
+                background: transparent;
+                color: #64748b;
+                padding: 0;
+                cursor: pointer;
+                line-height: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .password-toggle-btn:hover {
+                color: #1f2937;
+                background: transparent;
+            }
+
+            .password-toggle-btn svg {
+                width: 18px;
+                height: 18px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 1.8;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .password-icon-eye-off {
+                display: none;
+            }
+
+            .password-toggle-btn.is-visible .password-icon-eye {
+                display: none;
+            }
+
+            .password-toggle-btn.is-visible .password-icon-eye-off {
+                display: block;
+            }
+
             h1 {
                 text-align: center;
                 color: #2c3e50;
@@ -1425,11 +1479,41 @@
                 </div>
                 <div class="input-group" style="margin-top: 10px">
                     <label for="loginPassword">Password:</label>
-                    <input
-                        type="password"
-                        id="loginPassword"
-                        placeholder="Masukkan password"
-                    />
+                    <div class="password-input-wrap">
+                        <input
+                            type="password"
+                            id="loginPassword"
+                            placeholder="Masukkan password"
+                        />
+                        <button
+                            type="button"
+                            id="toggleLoginPassword"
+                            class="password-toggle-btn"
+                            onclick="togglePasswordVisibility('loginPassword', 'toggleLoginPassword')"
+                            aria-label="Lihat password"
+                            title="Lihat password"
+                        >
+                            <svg
+                                class="password-icon-eye"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
+                                ></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg
+                                class="password-icon-eye-off"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M3 3l18 18M10.6 10.6A3 3 0 0012 15a3 3 0 002.4-4.8M9.9 5.3A11.7 11.7 0 0112 5c6.5 0 10 7 10 7a15.9 15.9 0 01-4.2 4.8M6.2 6.2C3.5 8 2 12 2 12s3.5 6 10 6a11.8 11.8 0 005-.9"
+                                ></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div
                     id="loginConfirmGroup"
@@ -1439,11 +1523,41 @@
                     <label for="loginConfirmPassword"
                         >Konfirmasi Password:</label
                     >
-                    <input
-                        type="password"
-                        id="loginConfirmPassword"
-                        placeholder="Ulangi password"
-                    />
+                    <div class="password-input-wrap">
+                        <input
+                            type="password"
+                            id="loginConfirmPassword"
+                            placeholder="Ulangi password"
+                        />
+                        <button
+                            type="button"
+                            id="toggleLoginConfirmPassword"
+                            class="password-toggle-btn"
+                            onclick="togglePasswordVisibility('loginConfirmPassword', 'toggleLoginConfirmPassword')"
+                            aria-label="Lihat konfirmasi password"
+                            title="Lihat konfirmasi password"
+                        >
+                            <svg
+                                class="password-icon-eye"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
+                                ></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg
+                                class="password-icon-eye-off"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M3 3l18 18M10.6 10.6A3 3 0 0012 15a3 3 0 002.4-4.8M9.9 5.3A11.7 11.7 0 0112 5c6.5 0 10 7 10 7a15.9 15.9 0 01-4.2 4.8M6.2 6.2C3.5 8 2 12 2 12s3.5 6 10 6a11.8 11.8 0 005-.9"
+                                ></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="input-group" style="margin-top: 14px">
                     <button
@@ -2148,6 +2262,74 @@
                 updateAdminUsersButtonVisibility();
             }
 
+            function togglePasswordVisibility(inputId, buttonId) {
+                const input = document.getElementById(inputId);
+                const button = document.getElementById(buttonId);
+                if (!input || !button) {
+                    return;
+                }
+
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                button.classList.toggle("is-visible", isPassword);
+                button.setAttribute(
+                    "aria-label",
+                    isPassword
+                        ? buttonId === "toggleLoginConfirmPassword"
+                            ? "Sembunyikan konfirmasi password"
+                            : "Sembunyikan password"
+                        : buttonId === "toggleLoginConfirmPassword"
+                          ? "Lihat konfirmasi password"
+                          : "Lihat password",
+                );
+                button.setAttribute(
+                    "title",
+                    isPassword
+                        ? buttonId === "toggleLoginConfirmPassword"
+                            ? "Sembunyikan konfirmasi password"
+                            : "Sembunyikan password"
+                        : buttonId === "toggleLoginConfirmPassword"
+                          ? "Lihat konfirmasi password"
+                          : "Lihat password",
+                );
+            }
+
+            function resetPasswordVisibility() {
+                const passwordInput = document.getElementById("loginPassword");
+                const confirmPasswordInput = document.getElementById(
+                    "loginConfirmPassword",
+                );
+                const passwordToggle = document.getElementById(
+                    "toggleLoginPassword",
+                );
+                const confirmToggle = document.getElementById(
+                    "toggleLoginConfirmPassword",
+                );
+
+                if (passwordInput) {
+                    passwordInput.type = "password";
+                }
+                if (confirmPasswordInput) {
+                    confirmPasswordInput.type = "password";
+                }
+                if (passwordToggle) {
+                    passwordToggle.classList.remove("is-visible");
+                    passwordToggle.setAttribute("aria-label", "Lihat password");
+                    passwordToggle.setAttribute("title", "Lihat password");
+                }
+                if (confirmToggle) {
+                    confirmToggle.classList.remove("is-visible");
+                    confirmToggle.setAttribute(
+                        "aria-label",
+                        "Lihat konfirmasi password",
+                    );
+                    confirmToggle.setAttribute(
+                        "title",
+                        "Lihat konfirmasi password",
+                    );
+                }
+            }
+
             function isMobileLayout() {
                 return window.matchMedia("(max-width: 600px)").matches;
             }
@@ -2306,6 +2488,7 @@
                 if (confirmPasswordInput) {
                     confirmPasswordInput.value = "";
                 }
+                resetPasswordVisibility();
             }
 
             function toggleAuthMode() {
@@ -2335,6 +2518,7 @@
                 const response = await fetch(url, {
                     ...options,
                     headers,
+                    credentials: "include",
                 });
                 if (response.status === 401 && !url.startsWith("/api/auth/")) {
                     setAuthToken("");
@@ -2361,6 +2545,7 @@
                     const response = await fetch("/api/auth/login", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
+                        credentials: "include",
                         body: JSON.stringify({ username, password }),
                     });
                     const result = await response.json();
@@ -2368,7 +2553,7 @@
                         throw new Error(result.error || "Login gagal");
                     }
 
-                    setAuthToken(result.token);
+                    setAuthToken(result.token || "");
                     setCurrentUser(result.user || null);
                     hideLoginOverlay();
                     await loadPeopleFromDb();
@@ -2407,6 +2592,7 @@
                     const response = await fetch("/api/auth/register", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
+                        credentials: "include",
                         body: JSON.stringify({ username, password }),
                     });
                     const result = await response.json();
@@ -2471,13 +2657,6 @@
             async function checkAuthOnLoad() {
                 try {
                     showLoading("Memuat aplikasi...");
-                    if (!authToken) {
-                        setCurrentUser(null);
-                        setAuthMode("login");
-                        showLoginOverlay();
-                        return;
-                    }
-
                     const response = await apiFetch("/api/auth/me");
                     const result = await response.json();
                     if (!response.ok) {
