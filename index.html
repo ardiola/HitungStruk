@@ -124,8 +124,17 @@
 
             .section-divider {
                 border: 0;
-                border-top: 1px solid #e3e8f1;
-                margin: 8px 0 18px;
+                height: 2px;
+                margin: 14px 0 22px;
+                border-radius: 999px;
+                background: linear-gradient(
+                    90deg,
+                    rgba(37, 99, 235, 0),
+                    rgba(37, 99, 235, 0.45),
+                    rgba(37, 99, 235, 0.95),
+                    rgba(37, 99, 235, 0.45),
+                    rgba(37, 99, 235, 0)
+                );
             }
 
             button {
@@ -344,6 +353,35 @@
                 padding: 10px 14px;
                 font-size: 14px;
                 white-space: nowrap;
+            }
+
+            .item-custom-split-section {
+                padding: 10px;
+                border: 1px solid #dce9ff;
+                border-radius: 8px;
+                background: linear-gradient(180deg, #f8fbff 0%, #f1f7ff 100%);
+            }
+
+            .item-custom-split-controls {
+                margin: 0;
+                gap: 8px;
+            }
+
+            .item-custom-split-input-wrap {
+                flex: 1;
+            }
+
+            .item-custom-split-btn {
+                min-height: 42px;
+                padding-inline: 14px;
+            }
+
+            .item-split-selection-summary {
+                display: block;
+                margin-top: 6px;
+                color: #475569;
+                font-size: 12px;
+                line-height: 1.4;
             }
 
             .summary-input input {
@@ -1015,6 +1053,25 @@
                     grid-template-columns: 1fr;
                 }
 
+                .summary-input {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 8px;
+                }
+
+                .summary-input span {
+                    flex: none;
+                }
+
+                .summary-input .input-wrapper {
+                    width: 100%;
+                }
+
+                .summary-input .btn-split-apply {
+                    width: 100%;
+                    min-height: 44px;
+                }
+
                 .top-friend-actions {
                     flex-direction: column;
                 }
@@ -1107,6 +1164,64 @@
                 }
 
                 .person-submit-row .btn-add {
+                    min-height: 44px;
+                }
+
+                .item-custom-split-section {
+                    padding: 10px;
+                    border-radius: 10px;
+                }
+
+                .item-custom-split-controls {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 8px;
+                }
+
+                .item-custom-split-input-wrap {
+                    width: 100%;
+                }
+
+                .item-custom-split-btn {
+                    width: 100%;
+                    min-height: 44px;
+                }
+
+                .item-split-selection-summary {
+                    margin-top: 8px;
+                    padding: 8px 10px;
+                    border-radius: 8px;
+                    background: #eef5ff;
+                    border: 1px solid #dce9ff;
+                }
+
+                #itemPeoplePickerModal .assign-modal-content {
+                    max-width: 100%;
+                    border-radius: 12px;
+                }
+
+                #itemPeoplePickerModal .assign-modal-body {
+                    padding: 12px;
+                }
+
+                #itemPeoplePickerFields {
+                    max-height: 52vh;
+                    overflow-y: auto;
+                }
+
+                #itemPeoplePickerModal .assign-friend-row {
+                    grid-template-columns: 1fr;
+                    gap: 6px;
+                }
+
+                #itemPeoplePickerModal .assign-modal-actions {
+                    margin-top: 10px;
+                    gap: 8px;
+                    flex-direction: column-reverse;
+                }
+
+                #itemPeoplePickerModal .assign-modal-actions button {
+                    width: 100%;
                     min-height: 44px;
                 }
             }
@@ -1413,6 +1528,38 @@
 
             <hr class="section-divider" />
 
+            <div class="summary-input">
+                <span>Jumlah Orang:</span>
+                <div class="input-wrapper">
+                    <input
+                        type="number"
+                        id="splitCount"
+                        placeholder="1"
+                        min="1"
+                        value="1"
+                        onclick="
+                            if (this.value === '1') {
+                                this.value = '';
+                            }
+                        "
+                        onblur="
+                            if (this.value === '') {
+                                this.value = '1';
+                            }
+                        "
+                    />
+                </div>
+                <button
+                    class="btn-add btn-split-apply"
+                    type="button"
+                    onclick="applySplitCount()"
+                >
+                    Terapkan
+                </button>
+            </div>
+
+            <hr class="section-divider" />
+
             <div class="input-section">
                 <div class="input-group">
                     <label for="itemType">Jenis:</label>
@@ -1453,6 +1600,48 @@
                         min="1"
                         value="1"
                     />
+                </div>
+
+                <div class="input-group">
+                    <label for="itemSplitMode">Dibagi Ke:</label>
+                    <select id="itemSplitMode" onchange="updateItemSplitModeUI()">
+                        <option value="custom">Dibagi per Orang</option>
+                        <option value="all" selected>Semua Orang</option>
+                    </select>
+                </div>
+
+                <div
+                    id="itemCustomSplitSection"
+                    class="input-group item-custom-split-section"
+                    style="display: none"
+                >
+                    <label for="itemSplitPeopleCount">Jumlah dibagi:</label>
+                    <div class="summary-input item-custom-split-controls">
+                        <div class="input-wrapper item-custom-split-input-wrap">
+                            <input
+                                type="number"
+                                id="itemSplitPeopleCount"
+                                placeholder="Jumlah orang"
+                                min="1"
+                                value="1"
+                                oninput="handleItemCustomSplitInput()"
+                                onblur="normalizeItemCustomSplitInput()"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            class="btn-add btn-split-apply item-custom-split-btn"
+                            onclick="openItemPeoplePickerModal()"
+                        >
+                            Pilih Orang
+                        </button>
+                    </div>
+                    <small
+                        id="itemSplitSelectionSummary"
+                        class="item-split-selection-summary"
+                    >
+                        Belum memilih orang.
+                    </small>
                 </div>
 
                 <button
@@ -1594,35 +1783,6 @@
                         />
                         <span class="unit">Rp</span>
                     </div>
-                </div>
-                <div class="summary-input">
-                    <span>Jumlah Orang:</span>
-                    <div class="input-wrapper">
-                        <input
-                            type="number"
-                            id="splitCount"
-                            placeholder="1"
-                            min="1"
-                            value="1"
-                            onclick="
-                                if (this.value === '1') {
-                                    this.value = '';
-                                }
-                            "
-                            onblur="
-                                if (this.value === '') {
-                                    this.value = '1';
-                                }
-                            "
-                        />
-                    </div>
-                    <button
-                        class="btn-add btn-split-apply"
-                        type="button"
-                        onclick="applySplitCount()"
-                    >
-                        Terapkan
-                    </button>
                 </div>
                 <div class="summary-row-display">
                     <span>Subtotal:</span>
@@ -1821,6 +1981,41 @@
             </div>
 
             <div
+                id="itemPeoplePickerModal"
+                class="modal-overlay"
+                onclick="handleItemPeoplePickerModalBackdrop(event)"
+            >
+                <div class="modal-content assign-modal-content">
+                    <div class="assign-modal-header">
+                        <h3 class="assign-modal-title">Pilih Orang untuk Item</h3>
+                        <p class="assign-modal-subtitle">
+                            Pilih orang sesuai jumlah dibagi.
+                        </p>
+                    </div>
+                    <div class="assign-modal-body">
+                        <div
+                            id="itemPeoplePickerFields"
+                            class="assign-friends-fields"
+                        ></div>
+                        <div class="modal-actions assign-modal-actions">
+                            <button
+                                class="btn-reset"
+                                onclick="closeItemPeoplePickerModal()"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                class="btn-add"
+                                onclick="applyItemPeoplePickerSelection()"
+                            >
+                                Terapkan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div
                 id="mainActionConfirmModal"
                 class="modal-overlay"
                 onclick="handleMainActionConfirmModalBackdrop(event)"
@@ -1919,6 +2114,7 @@
             let items = [];
             let peopleCache = [];
             let selectedSplitPeople = [];
+            let pendingItemSplitPeople = [];
             let pendingDeleteFriend = null;
             let pendingMainAction = null;
             let authToken = localStorage.getItem("authToken") || "";
@@ -2336,6 +2532,10 @@
             function updateItemFormByType() {
                 const itemType = document.getElementById("itemType").value;
                 const isTax = itemType === "tax";
+                const splitMode = document.getElementById("itemSplitMode");
+                const itemSplitPeopleInput = document.getElementById(
+                    "itemSplitPeopleCount",
+                );
                 document.getElementById("itemNameLabel").textContent = isTax
                     ? "Nama Pajak:"
                     : "Nama Barang:";
@@ -2345,6 +2545,16 @@
                 document.getElementById("itemSubmitButton").textContent = isTax
                     ? "Tambah Pajak"
                     : "Tambah Item";
+                if (splitMode) {
+                    splitMode.disabled = isTax;
+                    if (isTax) {
+                        splitMode.value = "all";
+                    }
+                }
+                if (itemSplitPeopleInput) {
+                    itemSplitPeopleInput.disabled = isTax;
+                }
+                updateItemSplitModeUI();
             }
 
             // Add item to the list
@@ -2354,12 +2564,18 @@
                 const price = parseFormattedNumber(
                     document.getElementById("itemPrice").value,
                 );
+                const itemSplitMode = document.getElementById("itemSplitMode");
+                const itemSplitPeopleInput = document.getElementById(
+                    "itemSplitPeopleCount",
+                );
                 const isTax = itemType === "tax";
                 const nameLabel = isTax ? "Nama pajak" : "Nama barang";
                 const priceLabel = isTax ? "Tarif pajak" : "Harga";
                 const quantity = parseInt(
                     document.getElementById("itemQuantity").value,
                 );
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
 
                 // Validation
                 if (!name) {
@@ -2389,6 +2605,34 @@
                     subtotal: price * quantity,
                     isTax: isTax,
                 };
+                if (
+                    !isTax &&
+                    splitCount > 1 &&
+                    itemSplitMode &&
+                    itemSplitMode.value === "custom"
+                ) {
+                    const desiredSplitCount =
+                        parseInt(itemSplitPeopleInput?.value || "", 10) || 0;
+                    if (desiredSplitCount < 1 || desiredSplitCount > splitCount) {
+                        openWarningModal(
+                            "Pembagian Belum Tepat",
+                            `Jumlah dibagi harus 1 sampai ${splitCount}.`,
+                        );
+                        return;
+                    }
+                    if (pendingItemSplitPeople.length !== desiredSplitCount) {
+                        openWarningModal(
+                            "Pembagian Belum Lengkap",
+                            "Klik tombol Pilih Orang lalu tentukan orang sesuai jumlah dibagi.",
+                        );
+                        return;
+                    }
+
+                    item.sharedWith = [...pendingItemSplitPeople];
+                    item.sharedWithNames = pendingItemSplitPeople.map((person) =>
+                        getPersonDisplayName(person),
+                    );
+                }
 
                 // Add to items array
                 items.push(item);
@@ -2398,7 +2642,10 @@
                 document.getElementById("itemPrice").value = "";
                 document.getElementById("itemQuantity").value = "1";
                 document.getElementById("itemType").value = "item";
+                document.getElementById("itemSplitMode").value = "all";
+                pendingItemSplitPeople = [];
                 updateItemFormByType();
+                renderItemPersonOptions();
 
                 // Focus back to name input
                 document.getElementById("itemName").focus();
@@ -2427,6 +2674,17 @@
                     let nameDisplay = item.name;
                     if (item.isTax) {
                         nameDisplay = `<strong>${item.name} (Pajak)</strong>`;
+                    } else if (
+                        Array.isArray(item.sharedWith) &&
+                        item.sharedWith.length > 0
+                    ) {
+                        const sharedNames = (
+                            item.sharedWithNames ||
+                            item.sharedWith.map((personNumber) =>
+                                getPersonDisplayName(personNumber),
+                            )
+                        ).join(", ");
+                        nameDisplay = `${item.name} <span style="font-size:0.8em;color:#3498db;">(Dibagi: ${sharedNames})</span>`;
                     } else if (item.person !== undefined) {
                         const personName =
                             item.personName || `Orang ${item.person}`;
@@ -2460,55 +2718,49 @@
                     .fill()
                     .map(() => []);
 
-                // Calculate unassigned items value for equal distribution
-                const unassignedItems = items.filter(
-                    (item) => item.person === undefined,
-                );
-                const unassignedItemsSubtotal = unassignedItems
-                    .filter((item) => !item.isTax)
-                    .reduce((sum, item) => sum + item.subtotal, 0);
-                const unassignedTaxSubtotal = unassignedItems
-                    .filter((item) => item.isTax)
-                    .reduce((sum, item) => sum + item.subtotal, 0);
-
-                // Distribute unassigned items equally among all persons (when splitCount > 1)
-                if (splitCount > 1 && unassignedItemsSubtotal > 0) {
-                    const equalShare = unassignedItemsSubtotal / splitCount;
-                    for (let i = 0; i < splitCount; i++) {
-                        personItems[i].push({ subtotal: equalShare });
-                    }
-                }
-
-                // Distribute unassigned tax equally among all persons (when splitCount > 1)
-                if (splitCount > 1 && unassignedTaxSubtotal > 0) {
-                    const equalTaxShare = unassignedTaxSubtotal / splitCount;
-                    for (let i = 0; i < splitCount; i++) {
-                        personTaxItems[i].push({ subtotal: equalTaxShare });
-                    }
-                }
-
                 // Categorize items by person
                 items.forEach((item) => {
+                    const targetBuckets = item.isTax ? personTaxItems : personItems;
+                    if (
+                        Array.isArray(item.sharedWith) &&
+                        item.sharedWith.length > 0 &&
+                        splitCount > 1
+                    ) {
+                        const validSharedPeople = item.sharedWith.filter(
+                            (personNumber, index, arr) =>
+                                Number.isInteger(personNumber) &&
+                                personNumber >= 1 &&
+                                personNumber <= splitCount &&
+                                arr.indexOf(personNumber) === index,
+                        );
+                        if (validSharedPeople.length > 0) {
+                            const sharedSubtotal =
+                                item.subtotal / validSharedPeople.length;
+                            validSharedPeople.forEach((personNumber) => {
+                                targetBuckets[personNumber - 1].push({
+                                    subtotal: sharedSubtotal,
+                                });
+                            });
+                            return;
+                        }
+                    }
+
                     if (
                         item.person !== undefined &&
                         item.person >= 1 &&
                         item.person <= splitCount
                     ) {
-                        if (item.isTax) {
-                            personTaxItems[item.person - 1].push(item);
-                        } else {
-                            personItems[item.person - 1].push(item);
-                        }
+                        targetBuckets[item.person - 1].push(item);
                     } else {
-                        // Items without person assignment go to person 1 (or get distributed equally when splitCount > 1)
-                        if (splitCount === 1) {
-                            if (item.isTax) {
-                                personTaxItems[0].push(item);
-                            } else {
-                                personItems[0].push(item);
+                        // Items without explicit assignment are distributed equally.
+                        if (splitCount > 1) {
+                            const equalShare = item.subtotal / splitCount;
+                            for (let i = 0; i < splitCount; i++) {
+                                targetBuckets[i].push({ subtotal: equalShare });
                             }
+                        } else {
+                            targetBuckets[0].push(item);
                         }
-                        // When splitCount > 1, unassigned items are already distributed equally above
                     }
                 });
 
@@ -2665,6 +2917,241 @@
                 return `Orang ${personNumber}`;
             }
 
+            function renderItemPersonOptions() {
+                const splitInput = document.getElementById("itemSplitPeopleCount");
+                if (!splitInput) {
+                    return;
+                }
+
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                const previousDesiredCount = parseInt(splitInput.value, 10) || 1;
+                splitInput.min = "1";
+                splitInput.max = String(splitCount);
+                splitInput.value = String(
+                    Math.min(Math.max(previousDesiredCount, 1), splitCount),
+                );
+                const desiredCount = parseInt(splitInput.value, 10) || 1;
+                pendingItemSplitPeople = pendingItemSplitPeople.filter(
+                    (personNumber, index, arr) =>
+                        Number.isInteger(personNumber) &&
+                        personNumber >= 1 &&
+                        personNumber <= splitCount &&
+                        arr.indexOf(personNumber) === index,
+                );
+                if (pendingItemSplitPeople.length > desiredCount) {
+                    pendingItemSplitPeople = pendingItemSplitPeople.slice(
+                        0,
+                        desiredCount,
+                    );
+                }
+                updateItemSplitSelectionSummary();
+            }
+
+            function updateItemSplitModeUI() {
+                const modeElement = document.getElementById("itemSplitMode");
+                const customSection = document.getElementById(
+                    "itemCustomSplitSection",
+                );
+                const itemType = document.getElementById("itemType").value;
+                if (!modeElement || !customSection) {
+                    return;
+                }
+                const isTax = itemType === "tax";
+                const isCustom = !isTax && modeElement.value === "custom";
+                customSection.style.display = isCustom ? "block" : "none";
+
+                if (!isCustom) {
+                    pendingItemSplitPeople = [];
+                    updateItemSplitSelectionSummary();
+                    return;
+                }
+
+                renderItemPersonOptions();
+            }
+
+            function updateItemSplitSelectionSummary() {
+                const summary = document.getElementById("itemSplitSelectionSummary");
+                if (!summary) {
+                    return;
+                }
+                if (!pendingItemSplitPeople.length) {
+                    summary.textContent = "Belum memilih orang.";
+                    return;
+                }
+                const names = pendingItemSplitPeople.map((personNumber) =>
+                    getPersonDisplayName(personNumber),
+                );
+                summary.textContent = `Dipilih: ${names.join(", ")}`;
+            }
+
+            function validateItemCustomSplitCount() {
+                const splitInput = document.getElementById("itemSplitPeopleCount");
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                if (!splitInput) {
+                    return;
+                }
+
+                let desiredCount = parseInt(splitInput.value, 10) || 1;
+                if (desiredCount < 1) {
+                    desiredCount = 1;
+                }
+                if (desiredCount > splitCount) {
+                    desiredCount = splitCount;
+                    openWarningModal(
+                        "Pembagian Belum Tepat",
+                        `Jumlah dibagi tidak boleh lebih dari jumlah orang (${splitCount}).`,
+                    );
+                }
+                splitInput.value = String(desiredCount);
+            }
+
+            function handleItemCustomSplitInput() {
+                pendingItemSplitPeople = [];
+                updateItemSplitSelectionSummary();
+            }
+
+            function normalizeItemCustomSplitInput() {
+                const splitInput = document.getElementById("itemSplitPeopleCount");
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                if (!splitInput) {
+                    return;
+                }
+                let desiredCount = parseInt(splitInput.value, 10);
+                if (isNaN(desiredCount) || desiredCount < 1) {
+                    desiredCount = 1;
+                }
+                if (desiredCount > splitCount) {
+                    desiredCount = splitCount;
+                }
+                splitInput.value = String(desiredCount);
+            }
+
+            function openItemPeoplePickerModal() {
+                const splitInput = document.getElementById("itemSplitPeopleCount");
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                if (!splitInput) {
+                    return;
+                }
+
+                validateItemCustomSplitCount();
+                const desiredCount = parseInt(splitInput.value, 10) || 1;
+
+                renderItemPeoplePickerFields(desiredCount, splitCount);
+                const modal = document.getElementById("itemPeoplePickerModal");
+                if (modal) {
+                    modal.classList.add("show");
+                }
+            }
+
+            function closeItemPeoplePickerModal() {
+                const modal = document.getElementById("itemPeoplePickerModal");
+                if (modal) {
+                    modal.classList.remove("show");
+                }
+            }
+
+            function handleItemPeoplePickerModalBackdrop(event) {
+                if (event.target.id === "itemPeoplePickerModal") {
+                    closeItemPeoplePickerModal();
+                }
+            }
+
+            function renderItemPeoplePickerFields(desiredCount, splitCount) {
+                const container = document.getElementById("itemPeoplePickerFields");
+                if (!container) {
+                    return;
+                }
+                container.innerHTML = "";
+
+                const preferred = [...pendingItemSplitPeople];
+                while (preferred.length < desiredCount) {
+                    const next = preferred.length + 1;
+                    if (next <= splitCount) {
+                        preferred.push(next);
+                    } else {
+                        break;
+                    }
+                }
+
+                for (let i = 0; i < desiredCount; i++) {
+                    const row = document.createElement("div");
+                    row.className = "assign-friend-row";
+
+                    const label = document.createElement("label");
+                    label.textContent = `Orang ${i + 1}`;
+                    label.setAttribute("for", `itemShareSelect${i + 1}`);
+
+                    const select = document.createElement("select");
+                    select.className = "assign-friend-select";
+                    select.id = `itemShareSelect${i + 1}`;
+
+                    const defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.textContent = "-- Pilih orang --";
+                    select.appendChild(defaultOption);
+
+                    for (let personNumber = 1; personNumber <= splitCount; personNumber++) {
+                        const option = document.createElement("option");
+                        option.value = String(personNumber);
+                        option.textContent = getPersonDisplayName(personNumber);
+                        select.appendChild(option);
+                    }
+
+                    if (preferred[i]) {
+                        select.value = String(preferred[i]);
+                    }
+
+                    row.appendChild(label);
+                    row.appendChild(select);
+                    container.appendChild(row);
+                }
+            }
+
+            function applyItemPeoplePickerSelection() {
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                const desiredCount =
+                    parseInt(
+                        document.getElementById("itemSplitPeopleCount")?.value || "",
+                        10,
+                    ) || 1;
+                const picked = [];
+
+                for (let i = 0; i < desiredCount; i++) {
+                    const select = document.getElementById(`itemShareSelect${i + 1}`);
+                    const selectedValue = select ? parseInt(select.value, 10) : NaN;
+                    if (
+                        isNaN(selectedValue) ||
+                        selectedValue < 1 ||
+                        selectedValue > splitCount
+                    ) {
+                        openWarningModal(
+                            "Pilihan Belum Lengkap",
+                            "Pilih orang untuk semua baris.",
+                        );
+                        return;
+                    }
+                    picked.push(selectedValue);
+                }
+
+                const uniquePicked = [...new Set(picked)];
+                if (uniquePicked.length !== picked.length) {
+                    openWarningModal(
+                        "Pilihan Duplikat",
+                        "Setiap baris harus memilih orang yang berbeda.",
+                    );
+                    return;
+                }
+
+                pendingItemSplitPeople = uniquePicked;
+                updateItemSplitSelectionSummary();
+                closeItemPeoplePickerModal();
+            }
+
             // Reset all data
             function resetAll() {
                 items = [];
@@ -2673,12 +3160,16 @@
                 document.getElementById("itemPrice").value = "";
                 document.getElementById("itemQuantity").value = "1";
                 document.getElementById("itemType").value = "item";
+                document.getElementById("itemSplitMode").value = "all";
+                document.getElementById("itemSplitPeopleCount").value = "1";
+                pendingItemSplitPeople = [];
                 updateItemFormByType();
                 document.getElementById("discountPercent").value = "0";
                 document.getElementById("discountAmountInput").value = "";
                 document.getElementById("taxPercent").value = "0";
                 document.getElementById("taxAmountInput").value = "";
                 document.getElementById("splitCount").value = "1";
+                renderItemPersonOptions();
                 // Clear person inputs container
                 document.getElementById("personInputsContainer").innerHTML = "";
                 // Remove person bills section
@@ -2695,10 +3186,12 @@
                 // Set default quantity to 1
                 document.getElementById("itemQuantity").value = "1";
                 updateItemFormByType();
+                syncSplitCountInputLimit(true);
                 // Focus on item name input
                 document.getElementById("itemName").focus();
                 // Generate person inputs based on initial splitCount
                 generatePersonInputs();
+                renderItemPersonOptions();
                 calculateTotal();
             });
 
@@ -2711,10 +3204,12 @@
                 }
                 splitInput.value = String(splitCount);
 
-                if (!Array.isArray(items) || items.length === 0) {
-                    openSplitWarningModal();
+                syncSplitCountInputLimit(false);
+                if (!validateSplitCountAgainstFriends(splitCount)) {
                     return;
                 }
+
+                renderItemPersonOptions();
 
                 if (splitCount <= 1) {
                     selectedSplitPeople = [];
@@ -2724,6 +3219,50 @@
                 }
 
                 openAssignFriendsModal(splitCount);
+            }
+
+            function getMaxSplitCountByFriends() {
+                return Math.max(
+                    1,
+                    Array.isArray(peopleCache) ? peopleCache.length : 0,
+                );
+            }
+
+            function syncSplitCountInputLimit(clampValue) {
+                const splitInput = document.getElementById("splitCount");
+                if (!splitInput) {
+                    return;
+                }
+                const maxSplitCount = getMaxSplitCountByFriends();
+                splitInput.max = String(maxSplitCount);
+
+                if (!clampValue) {
+                    return;
+                }
+
+                let currentValue = parseInt(splitInput.value, 10);
+                if (isNaN(currentValue) || currentValue < 1) {
+                    currentValue = 1;
+                }
+                if (currentValue > maxSplitCount) {
+                    splitInput.value = String(maxSplitCount);
+                }
+            }
+
+            function validateSplitCountAgainstFriends(splitCount) {
+                const maxSplitCount = getMaxSplitCountByFriends();
+                if (splitCount <= maxSplitCount) {
+                    return true;
+                }
+                const splitInput = document.getElementById("splitCount");
+                if (splitInput) {
+                    splitInput.value = String(maxSplitCount);
+                }
+                openWarningModal(
+                    "Jumlah Orang Melebihi Teman",
+                    `Jumlah orang maksimal ${maxSplitCount} sesuai jumlah teman tersimpan.`,
+                );
+                return false;
             }
 
             function openSplitWarningModal() {
@@ -3360,6 +3899,7 @@
                     const response = await apiFetch("/api/people");
                     const people = await response.json();
                     peopleCache = Array.isArray(people) ? people : [];
+                    syncSplitCountInputLimit(true);
                     renderFriendsList(peopleCache);
                     renderAssignFriendsFields();
                 } catch (err) {
@@ -3482,8 +4022,18 @@
                         if (item.person === i) {
                             item.personName = displayName;
                         }
+                        if (
+                            Array.isArray(item.sharedWith) &&
+                            item.sharedWith.includes(i)
+                        ) {
+                            item.sharedWithNames = item.sharedWith.map(
+                                (personNumber) =>
+                                    getPersonDisplayName(personNumber),
+                            );
+                        }
                     });
                 }
+                renderItemPersonOptions();
                 closeAssignFriendsModal();
                 renderTable();
                 calculateTotal();
@@ -3625,6 +4175,7 @@
                     closeMainActionConfirmModal();
                     closeLogoutConfirmModal();
                     closeSplitWarningModal();
+                    closeItemPeoplePickerModal();
                 }
             });
 
