@@ -1754,6 +1754,7 @@
                         </div>
                         <button
                             type="button"
+                            id="itemSplitPeopleButton"
                             class="btn-add btn-split-apply item-custom-split-btn"
                             onclick="openItemPeoplePickerModal()"
                         >
@@ -2239,6 +2240,8 @@
             let peopleCache = [];
             let selectedSplitPeople = [];
             let pendingItemSplitPeople = [];
+            let appliedSplitCount = 1;
+            let isSplitConfigurationSaved = true;
             let pendingDeleteFriend = null;
             let pendingMainAction = null;
             let authToken = localStorage.getItem("authToken") || "";
@@ -2260,6 +2263,25 @@
             function setCurrentUser(user) {
                 currentUser = user || null;
                 updateAdminUsersButtonVisibility();
+            }
+
+            function clearUserSessionState() {
+                resetAll();
+                peopleCache = [];
+                adminUsersCache = [];
+                pendingDeleteFriend = null;
+                pendingDeleteUser = null;
+
+                const friendsList = document.getElementById("friendsList");
+                if (friendsList) {
+                    friendsList.innerHTML = "";
+                }
+                const assignFields = document.getElementById("assignFriendsFields");
+                if (assignFields) {
+                    assignFields.innerHTML = "";
+                }
+                closeAssignFriendsModal();
+                closeItemPeoplePickerModal();
             }
 
             function togglePasswordVisibility(inputId, buttonId) {
@@ -2522,6 +2544,8 @@
                 });
                 if (response.status === 401 && !url.startsWith("/api/auth/")) {
                     setAuthToken("");
+                    clearUserSessionState();
+                    setCurrentUser(null);
                     showLoginOverlay("Sesi habis, silakan login lagi.");
                 }
                 return response;
@@ -2554,6 +2578,7 @@
                     }
 
                     setAuthToken(result.token || "");
+                    clearUserSessionState();
                     setCurrentUser(result.user || null);
                     hideLoginOverlay();
                     await loadPeopleFromDb();
@@ -2647,6 +2672,7 @@
                     hideLoading();
                 }
                 setAuthToken("");
+                clearUserSessionState();
                 setCurrentUser(null);
                 setAuthMode("login");
                 document.getElementById("loginPassword").value = "";
@@ -2661,15 +2687,18 @@
                     const result = await response.json();
                     if (!response.ok) {
                         setAuthToken("");
+                        clearUserSessionState();
                         setCurrentUser(null);
                         showLoginOverlay();
                         return;
                     }
+                    clearUserSessionState();
                     setCurrentUser(result || null);
                     hideLoginOverlay();
                     await loadPeopleFromDb();
                 } catch (err) {
                     setAuthToken("");
+                    clearUserSessionState();
                     setCurrentUser(null);
                     setAuthMode("login");
                     showLoginOverlay("Gagal memeriksa sesi login.");
@@ -2721,9 +2750,14 @@
             function updateItemFormByType() {
                 const itemType = document.getElementById("itemType").value;
                 const isTax = itemType === "tax";
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
                 const splitMode = document.getElementById("itemSplitMode");
                 const itemSplitPeopleInput = document.getElementById(
                     "itemSplitPeopleCount",
+                );
+                const itemSplitPeopleButton = document.getElementById(
+                    "itemSplitPeopleButton",
                 );
                 document.getElementById("itemNameLabel").textContent = isTax
                     ? "Nama Pajak:"
@@ -2734,14 +2768,18 @@
                 document.getElementById("itemSubmitButton").textContent = isTax
                     ? "Tambah Pajak"
                     : "Tambah Item";
+                const disableSplitControls = isTax || splitCount <= 1;
                 if (splitMode) {
-                    splitMode.disabled = isTax;
-                    if (isTax) {
+                    splitMode.disabled = disableSplitControls;
+                    if (disableSplitControls) {
                         splitMode.value = "all";
                     }
                 }
                 if (itemSplitPeopleInput) {
-                    itemSplitPeopleInput.disabled = isTax;
+                    itemSplitPeopleInput.disabled = disableSplitControls;
+                }
+                if (itemSplitPeopleButton) {
+                    itemSplitPeopleButton.disabled = disableSplitControls;
                 }
                 updateItemSplitModeUI();
             }
@@ -2800,6 +2838,9 @@
                     itemSplitMode &&
                     itemSplitMode.value === "custom"
                 ) {
+                    if (!validateSplitAppliedForItemSplit()) {
+                        return;
+                    }
                     const desiredSplitCount =
                         parseInt(itemSplitPeopleInput?.value || "", 10) || 0;
                     if (desiredSplitCount < 1 || desiredSplitCount > splitCount) {
@@ -3152,11 +3193,14 @@
                     "itemCustomSplitSection",
                 );
                 const itemType = document.getElementById("itemType").value;
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) || 1;
                 if (!modeElement || !customSection) {
                     return;
                 }
                 const isTax = itemType === "tax";
-                const isCustom = !isTax && modeElement.value === "custom";
+                const isCustom =
+                    !isTax && splitCount > 1 && modeElement.value === "custom";
                 customSection.style.display = isCustom ? "block" : "none";
 
                 if (!isCustom) {
@@ -3227,11 +3271,35 @@
                 splitInput.value = String(desiredCount);
             }
 
+            function validateSplitAppliedForItemSplit() {
+                const splitInput = document.getElementById("splitCount");
+                if (!splitInput) {
+                    return true;
+                }
+                const currentSplitCount = parseInt(splitInput.value, 10) || 1;
+                if (
+                    currentSplitCount === appliedSplitCount &&
+                    (currentSplitCount <= 1 || isSplitConfigurationSaved)
+                ) {
+                    return true;
+                }
+                openWarningModal(
+                    "Jumlah Orang Belum Diterapkan",
+                    currentSplitCount > 1
+                        ? "Klik Terapkan lalu Simpan Pilihan pada modal jumlah orang terlebih dahulu."
+                        : "Klik tombol Terapkan pada Jumlah Orang terlebih dahulu sebelum mengatur jumlah dibagi.",
+                );
+                return false;
+            }
+
             function openItemPeoplePickerModal() {
                 const splitInput = document.getElementById("itemSplitPeopleCount");
                 const splitCount =
                     parseInt(document.getElementById("splitCount").value, 10) || 1;
                 if (!splitInput) {
+                    return;
+                }
+                if (!validateSplitAppliedForItemSplit()) {
                     return;
                 }
 
@@ -3367,6 +3435,8 @@
                 document.getElementById("taxPercent").value = "0";
                 document.getElementById("taxAmountInput").value = "";
                 document.getElementById("splitCount").value = "1";
+                appliedSplitCount = 1;
+                isSplitConfigurationSaved = true;
                 renderItemPersonOptions();
                 // Clear person inputs container
                 document.getElementById("personInputsContainer").innerHTML = "";
@@ -3406,16 +3476,20 @@
                 if (!validateSplitCountAgainstFriends(splitCount)) {
                     return;
                 }
+                appliedSplitCount = splitCount;
 
+                updateItemFormByType();
                 renderItemPersonOptions();
 
                 if (splitCount <= 1) {
                     selectedSplitPeople = [];
+                    isSplitConfigurationSaved = true;
                     generatePersonInputs();
                     calculateTotal();
                     return;
                 }
 
+                isSplitConfigurationSaved = false;
                 openAssignFriendsModal(splitCount);
             }
 
@@ -3448,6 +3522,21 @@
             }
 
             function validateSplitCountAgainstFriends(splitCount) {
+                const friendCount = Array.isArray(peopleCache)
+                    ? peopleCache.length
+                    : 0;
+                if (friendCount === 0 && splitCount > 1) {
+                    const splitInput = document.getElementById("splitCount");
+                    if (splitInput) {
+                        splitInput.value = "1";
+                    }
+                    openWarningModal(
+                        "Teman Belum Ditambahkan",
+                        "Tambahkan teman terlebih dahulu sebelum menekan tombol Terapkan.",
+                    );
+                    return false;
+                }
+
                 const maxSplitCount = getMaxSplitCountByFriends();
                 if (splitCount <= maxSplitCount) {
                     return true;
@@ -4196,11 +4285,15 @@
                 const splitCount =
                     parseInt(document.getElementById("splitCount").value) || 1;
                 selectedSplitPeople = [];
+                const selectedFriendIds = [];
                 for (let i = 1; i <= splitCount; i++) {
                     const select = document.getElementById(
                         `assignFriendSelect${i}`,
                     );
                     const selectedId = select ? select.value : "";
+                    if (selectedId) {
+                        selectedFriendIds.push(selectedId);
+                    }
                     const selectedPerson = peopleCache.find(
                         (person) => String(person.id) === selectedId,
                     );
@@ -4213,6 +4306,16 @@
                     });
                 }
 
+                const uniqueFriendIds = [...new Set(selectedFriendIds)];
+                if (uniqueFriendIds.length !== selectedFriendIds.length) {
+                    openWarningModal(
+                        "Pilihan Teman Duplikat",
+                        "Teman per orang tidak boleh sama. Pilih teman yang berbeda untuk setiap orang.",
+                    );
+                    return;
+                }
+
+                isSplitConfigurationSaved = true;
                 generatePersonInputs();
                 for (let i = 1; i <= splitCount; i++) {
                     const displayName = getPersonDisplayName(i);
