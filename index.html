@@ -810,6 +810,8 @@
                 align-items: center;
                 gap: 8px;
                 pointer-events: none;
+                width: max-content;
+                max-width: calc(100% - 32px);
             }
 
             .toast {
@@ -851,8 +853,14 @@
 
             @media (max-width: 600px) {
                 #toast-container {
-                    top: 16px;
-                    width: calc(100% - 32px);
+                    top: calc(12px + env(safe-area-inset-top, 0px));
+                    bottom: auto;
+                    left: 16px;
+                    right: 16px;
+                    transform: none;
+                    width: auto;
+                    max-width: none;
+                    align-items: stretch;
                 }
                 .toast {
                     white-space: normal;
@@ -3567,11 +3575,43 @@
 
             function showToast(message) {
                 const container = document.getElementById("toast-container");
+                if (!container) {
+                    return;
+                }
+                updateToastContainerPosition();
                 const toast = document.createElement("div");
                 toast.className = "toast";
                 toast.innerHTML = `<span class="toast-icon">✓</span><span>${message}</span>`;
                 container.appendChild(toast);
                 setTimeout(() => toast.remove(), 2600);
+            }
+
+            function updateToastContainerPosition() {
+                const container = document.getElementById("toast-container");
+                if (!container) {
+                    return;
+                }
+                const isMobile = window.matchMedia("(max-width: 600px)").matches;
+                if (!isMobile) {
+                    container.style.top = "";
+                    return;
+                }
+                const viewport = window.visualViewport;
+                if (viewport) {
+                    const topShiftByOffset = viewport.offsetTop || 0;
+                    const topShiftByPage =
+                        Math.max(
+                            0,
+                            (viewport.pageTop || 0) - (window.scrollY || 0),
+                        ) || 0;
+                    const topOffset = Math.max(
+                        12,
+                        Math.round(12 + Math.max(topShiftByOffset, topShiftByPage)),
+                    );
+                    container.style.top = `${topOffset}px`;
+                    return;
+                }
+                container.style.top = "";
             }
 
             function openWarningModal(title, message) {
@@ -4480,6 +4520,7 @@
             document.addEventListener("DOMContentLoaded", function () {
                 checkAuthOnLoad();
                 registerServiceWorker();
+                updateToastContainerPosition();
             });
 
             document.addEventListener("keydown", function (event) {
@@ -4512,7 +4553,24 @@
 
             window.addEventListener("resize", function () {
                 updateAdminUsersButtonVisibility();
+                updateToastContainerPosition();
             });
+            window.addEventListener("scroll", updateToastContainerPosition, {
+                passive: true,
+            });
+            document.addEventListener("focusin", updateToastContainerPosition);
+            document.addEventListener("focusout", updateToastContainerPosition);
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener(
+                    "resize",
+                    updateToastContainerPosition,
+                );
+                window.visualViewport.addEventListener(
+                    "scroll",
+                    updateToastContainerPosition,
+                );
+            }
         </script>
 
         <div id="toast-container"></div>
