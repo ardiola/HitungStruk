@@ -851,7 +851,9 @@
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
                 opacity: 0;
                 transform: translateY(-16px);
-                animation: toast-in 0.25s ease forwards, toast-out 0.3s ease 2.2s forwards;
+                animation:
+                    toast-in 0.25s ease forwards,
+                    toast-out 0.3s ease 2.2s forwards;
                 white-space: nowrap;
             }
 
@@ -868,11 +870,17 @@
             }
 
             @keyframes toast-in {
-                to { opacity: 1; transform: translateY(0); }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
 
             @keyframes toast-out {
-                to { opacity: 0; transform: translateY(-16px); }
+                to {
+                    opacity: 0;
+                    transform: translateY(-16px);
+                }
             }
 
             @media (max-width: 600px) {
@@ -1544,7 +1552,12 @@
                             type="button"
                             id="toggleLoginPassword"
                             class="password-toggle-btn"
-                            onclick="togglePasswordVisibility('loginPassword', 'toggleLoginPassword')"
+                            onclick="
+                                togglePasswordVisibility(
+                                    'loginPassword',
+                                    'toggleLoginPassword',
+                                )
+                            "
                             aria-label="Lihat password"
                             title="Lihat password"
                         >
@@ -1588,7 +1601,12 @@
                             type="button"
                             id="toggleLoginConfirmPassword"
                             class="password-toggle-btn"
-                            onclick="togglePasswordVisibility('loginConfirmPassword', 'toggleLoginConfirmPassword')"
+                            onclick="
+                                togglePasswordVisibility(
+                                    'loginConfirmPassword',
+                                    'toggleLoginConfirmPassword',
+                                )
+                            "
                             aria-label="Lihat konfirmasi password"
                             title="Lihat konfirmasi password"
                         >
@@ -1773,7 +1791,10 @@
 
                 <div class="input-group">
                     <label for="itemSplitMode">Dibagi Ke:</label>
-                    <select id="itemSplitMode" onchange="updateItemSplitModeUI()">
+                    <select
+                        id="itemSplitMode"
+                        onchange="updateItemSplitModeUI()"
+                    >
                         <option value="custom">Dibagi per Orang</option>
                         <option value="all" selected>Semua Orang</option>
                     </select>
@@ -1903,7 +1924,9 @@
                                 }
                             "
                             oninput="
-                                document.getElementById('discountAmountInput').value = '';
+                                document.getElementById(
+                                    'discountAmountInput',
+                                ).value = '';
                                 calculateTotal();
                             "
                             onblur="
@@ -1920,7 +1943,9 @@
                             id="discountAmountInput"
                             placeholder="0"
                             oninput="
-                                document.getElementById('discountPercent').value = '0';
+                                document.getElementById(
+                                    'discountPercent',
+                                ).value = '0';
                                 formatRupiah(this);
                                 calculateTotal();
                             "
@@ -2223,7 +2248,9 @@
             >
                 <div class="modal-content assign-modal-content">
                     <div class="assign-modal-header">
-                        <h3 class="assign-modal-title">Pilih Orang untuk Item</h3>
+                        <h3 class="assign-modal-title">
+                            Pilih Orang untuk Item
+                        </h3>
                         <p class="assign-modal-subtitle">
                             Pilih orang sesuai jumlah dibagi.
                         </p>
@@ -2390,7 +2417,9 @@
                 if (friendsList) {
                     friendsList.innerHTML = "";
                 }
-                const assignFields = document.getElementById("assignFriendsFields");
+                const assignFields = document.getElementById(
+                    "assignFriendsFields",
+                );
                 if (assignFields) {
                     assignFields.innerHTML = "";
                 }
@@ -2867,7 +2896,8 @@
                 const itemType = document.getElementById("itemType").value;
                 const isTax = itemType === "tax";
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
                 const splitMode = document.getElementById("itemSplitMode");
                 const itemSplitPeopleInput = document.getElementById(
                     "itemSplitPeopleCount",
@@ -2918,7 +2948,8 @@
                     document.getElementById("itemQuantity").value,
                 );
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
 
                 // Validation
                 if (!name) {
@@ -2965,7 +2996,10 @@
                     }
                     const desiredSplitCount =
                         parseInt(itemSplitPeopleInput?.value || "", 10) || 0;
-                    if (desiredSplitCount < 1 || desiredSplitCount > splitCount) {
+                    if (
+                        desiredSplitCount < 1 ||
+                        desiredSplitCount > splitCount
+                    ) {
                         openWarningModal(
                             "Pembagian Belum Tepat",
                             `Jumlah dibagi harus 1 sampai ${splitCount}.`,
@@ -2981,8 +3015,8 @@
                     }
 
                     item.sharedWith = [...pendingItemSplitPeople];
-                    item.sharedWithNames = pendingItemSplitPeople.map((person) =>
-                        getPersonDisplayName(person),
+                    item.sharedWithNames = pendingItemSplitPeople.map(
+                        (person) => getPersonDisplayName(person),
                     );
                 } else if (
                     !isTax &&
@@ -3012,7 +3046,11 @@
                 // Update table and totals
                 renderTable();
                 calculateTotal();
-                showToast(isTax ? "Pajak berhasil ditambahkan." : "Item berhasil ditambahkan.");
+                showToast(
+                    isTax
+                        ? "Pajak berhasil ditambahkan."
+                        : "Item berhasil ditambahkan.",
+                );
             }
 
             // Remove item from the list
@@ -3081,7 +3119,9 @@
 
                 // Categorize items by person
                 items.forEach((item) => {
-                    const targetBuckets = item.isTax ? personTaxItems : personItems;
+                    const targetBuckets = item.isTax
+                        ? personTaxItems
+                        : personItems;
                     if (
                         Array.isArray(item.sharedWith) &&
                         item.sharedWith.length > 0 &&
@@ -3282,13 +3322,16 @@
             }
 
             function renderTransferAccountSelect() {
-                const section = document.getElementById("transferAccountSection");
+                const section = document.getElementById(
+                    "transferAccountSection",
+                );
                 const select = document.getElementById("transferAccountSelect");
                 if (!section || !select) {
                     return;
                 }
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
                 const candidates = getTransferAccountCandidates();
                 if (
                     splitCount <= 1 ||
@@ -3296,16 +3339,24 @@
                     !isSplitConfigurationSaved
                 ) {
                     section.style.display = "none";
-                    select.innerHTML = '<option value="">Pilih rekening tujuan</option>';
+                    select.innerHTML =
+                        '<option value="">Pilih rekening tujuan</option>';
                     transferAccountFriendId = null;
                     updateTransferAccountInfo();
                     return;
                 }
-                const validIds = new Set(candidates.map((candidate) => candidate.friendId));
-                if (!Number.isInteger(transferAccountFriendId) || !validIds.has(transferAccountFriendId)) {
+                const validIds = new Set(
+                    candidates.map((candidate) => candidate.friendId),
+                );
+                if (
+                    !Number.isInteger(transferAccountFriendId) ||
+                    !validIds.has(transferAccountFriendId)
+                ) {
                     transferAccountFriendId = null;
                 }
-                const placeholderSelected = Number.isInteger(transferAccountFriendId)
+                const placeholderSelected = Number.isInteger(
+                    transferAccountFriendId,
+                )
                     ? ""
                     : " selected";
                 const optionsHtml = [
@@ -3336,7 +3387,9 @@
             }
 
             function updateTransferAccountInfo() {
-                const infoElement = document.getElementById("transferAccountInfo");
+                const infoElement = document.getElementById(
+                    "transferAccountInfo",
+                );
                 if (!infoElement) {
                     return;
                 }
@@ -3345,7 +3398,8 @@
                     return;
                 }
                 const selected = getTransferAccountCandidates().find(
-                    (candidate) => candidate.friendId === transferAccountFriendId,
+                    (candidate) =>
+                        candidate.friendId === transferAccountFriendId,
                 );
                 if (!selected) {
                     infoElement.textContent = "-";
@@ -3355,14 +3409,18 @@
             }
 
             function renderItemPersonOptions() {
-                const splitInput = document.getElementById("itemSplitPeopleCount");
+                const splitInput = document.getElementById(
+                    "itemSplitPeopleCount",
+                );
                 if (!splitInput) {
                     return;
                 }
 
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
-                const previousDesiredCount = parseInt(splitInput.value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
+                const previousDesiredCount =
+                    parseInt(splitInput.value, 10) || 1;
                 splitInput.min = "1";
                 splitInput.max = String(splitCount);
                 splitInput.value = String(
@@ -3392,7 +3450,8 @@
                 );
                 const itemType = document.getElementById("itemType").value;
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
                 if (!modeElement || !customSection) {
                     return;
                 }
@@ -3411,7 +3470,9 @@
             }
 
             function updateItemSplitSelectionSummary() {
-                const summary = document.getElementById("itemSplitSelectionSummary");
+                const summary = document.getElementById(
+                    "itemSplitSelectionSummary",
+                );
                 if (!summary) {
                     return;
                 }
@@ -3426,9 +3487,12 @@
             }
 
             function validateItemCustomSplitCount() {
-                const splitInput = document.getElementById("itemSplitPeopleCount");
+                const splitInput = document.getElementById(
+                    "itemSplitPeopleCount",
+                );
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
                 if (!splitInput) {
                     return;
                 }
@@ -3453,9 +3517,12 @@
             }
 
             function normalizeItemCustomSplitInput() {
-                const splitInput = document.getElementById("itemSplitPeopleCount");
+                const splitInput = document.getElementById(
+                    "itemSplitPeopleCount",
+                );
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
                 if (!splitInput) {
                     return;
                 }
@@ -3491,9 +3558,12 @@
             }
 
             function openItemPeoplePickerModal() {
-                const splitInput = document.getElementById("itemSplitPeopleCount");
+                const splitInput = document.getElementById(
+                    "itemSplitPeopleCount",
+                );
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
                 if (!splitInput) {
                     return;
                 }
@@ -3525,7 +3595,9 @@
             }
 
             function renderItemPeoplePickerFields(desiredCount, splitCount) {
-                const container = document.getElementById("itemPeoplePickerFields");
+                const container = document.getElementById(
+                    "itemPeoplePickerFields",
+                );
                 if (!container) {
                     return;
                 }
@@ -3558,7 +3630,11 @@
                     defaultOption.textContent = "-- Pilih orang --";
                     select.appendChild(defaultOption);
 
-                    for (let personNumber = 1; personNumber <= splitCount; personNumber++) {
+                    for (
+                        let personNumber = 1;
+                        personNumber <= splitCount;
+                        personNumber++
+                    ) {
                         const option = document.createElement("option");
                         option.value = String(personNumber);
                         option.textContent = getPersonDisplayName(personNumber);
@@ -3577,17 +3653,23 @@
 
             function applyItemPeoplePickerSelection() {
                 const splitCount =
-                    parseInt(document.getElementById("splitCount").value, 10) || 1;
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
                 const desiredCount =
                     parseInt(
-                        document.getElementById("itemSplitPeopleCount")?.value || "",
+                        document.getElementById("itemSplitPeopleCount")
+                            ?.value || "",
                         10,
                     ) || 1;
                 const picked = [];
 
                 for (let i = 0; i < desiredCount; i++) {
-                    const select = document.getElementById(`itemShareSelect${i + 1}`);
-                    const selectedValue = select ? parseInt(select.value, 10) : NaN;
+                    const select = document.getElementById(
+                        `itemShareSelect${i + 1}`,
+                    );
+                    const selectedValue = select
+                        ? parseInt(select.value, 10)
+                        : NaN;
                     if (
                         isNaN(selectedValue) ||
                         selectedValue < 1 ||
@@ -3781,7 +3863,8 @@
                 if (!container) {
                     return;
                 }
-                const isMobile = window.matchMedia("(max-width: 600px)").matches;
+                const isMobile =
+                    window.matchMedia("(max-width: 600px)").matches;
                 if (!isMobile) {
                     container.style.top = "";
                     return;
@@ -3796,7 +3879,9 @@
                         ) || 0;
                     const topOffset = Math.max(
                         12,
-                        Math.round(12 + Math.max(topShiftByOffset, topShiftByPage)),
+                        Math.round(
+                            12 + Math.max(topShiftByOffset, topShiftByPage),
+                        ),
                     );
                     container.style.top = `${topOffset}px`;
                     return;
@@ -4205,7 +4290,10 @@
                 const noRekening = (rekeningInput?.value || "").trim();
 
                 if (!nama) {
-                    openWarningModal("Input Tidak Valid", "Nama tidak boleh kosong!");
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        "Nama tidak boleh kosong!",
+                    );
                     return;
                 }
                 if (!noRekening) {
@@ -4646,7 +4734,11 @@
                     editBtn.textContent = "Edit";
                     editBtn.type = "button";
                     editBtn.onclick = () =>
-                        openEditFriendModal(person.id, person.nama, person.no_rekening);
+                        openEditFriendModal(
+                            person.id,
+                            person.nama,
+                            person.no_rekening,
+                        );
 
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "btn-reset friend-delete-btn";
@@ -4671,7 +4763,8 @@
                     noRekening: noRekening || "",
                 };
                 const nameInput = document.getElementById("editFriendName");
-                const rekeningInput = document.getElementById("editFriendRekening");
+                const rekeningInput =
+                    document.getElementById("editFriendRekening");
                 if (nameInput) {
                     nameInput.value = pendingEditFriend.name;
                 }
@@ -4729,12 +4822,16 @@
                 }
 
                 const nameInput = document.getElementById("editFriendName");
-                const rekeningInput = document.getElementById("editFriendRekening");
+                const rekeningInput =
+                    document.getElementById("editFriendRekening");
                 const nama = String(nameInput?.value || "").trim();
                 const noRekening = String(rekeningInput?.value || "").trim();
 
                 if (!nama) {
-                    openWarningModal("Input Tidak Valid", "Nama tidak boleh kosong!");
+                    openWarningModal(
+                        "Input Tidak Valid",
+                        "Nama tidak boleh kosong!",
+                    );
                     return;
                 }
                 if (!noRekening) {
@@ -4764,12 +4861,16 @@
                         {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ nama, no_rekening: noRekening }),
+                            body: JSON.stringify({
+                                nama,
+                                no_rekening: noRekening,
+                            }),
                         },
                     );
                     if (!response.ok) {
-                        const contentType =
-                            String(response.headers.get("content-type") || "").toLowerCase();
+                        const contentType = String(
+                            response.headers.get("content-type") || "",
+                        ).toLowerCase();
                         if (contentType.includes("application/json")) {
                             const errBody = await response.json();
                             throw new Error(
@@ -4777,7 +4878,10 @@
                             );
                         }
                         const errText = await response.text();
-                        if (response.status === 404 || response.status === 405) {
+                        if (
+                            response.status === 404 ||
+                            response.status === 405
+                        ) {
                             throw new Error(
                                 "Endpoint update belum aktif. Restart server backend terlebih dahulu.",
                             );
@@ -4862,7 +4966,9 @@
                     return;
                 }
                 try {
-                    await navigator.serviceWorker.register("/service-worker.js");
+                    await navigator.serviceWorker.register(
+                        "/service-worker.js",
+                    );
                 } catch (err) {
                     console.warn("Registrasi service worker gagal:", err);
                 }
