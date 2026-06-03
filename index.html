@@ -1355,7 +1355,6 @@
                     max-width: 100%;
                 }
 
-                h1,
                 .input-section,
                 .person-inputs-wrapper,
                 .btn-actions,
@@ -1464,11 +1463,11 @@
                 border-radius: 0;
             }
 
-            .image-export-capture h1,
             .image-export-capture .input-section,
             .image-export-capture .person-inputs-wrapper,
             .image-export-capture .btn-actions,
             .image-export-capture .format-info,
+            .image-export-capture .section-divider,
             .image-export-capture .summary-input-wide,
             .image-export-capture .summary-input-wide > .input-wrapper,
             .image-export-capture .summary-input,
@@ -4054,6 +4053,31 @@
                 }
             }
 
+            function printWithoutBrowserTitle() {
+                const originalTitle = document.title;
+                const temporaryTitle = "\u200B";
+                let restored = false;
+
+                function restoreTitle() {
+                    if (restored) {
+                        return;
+                    }
+                    restored = true;
+                    document.title = originalTitle;
+                    window.removeEventListener("afterprint", restoreTitle);
+                }
+
+                document.title = temporaryTitle;
+                window.addEventListener("afterprint", restoreTitle, {
+                    once: true,
+                });
+
+                window.print();
+
+                // Fallback jika afterprint tidak terpanggil di browser tertentu
+                setTimeout(restoreTitle, 1000);
+            }
+
             async function confirmMainAction() {
                 const action = pendingMainAction;
                 closeMainActionConfirmModal();
@@ -4061,7 +4085,7 @@
                     if (!validateTableHasItemsForOutput()) {
                         return;
                     }
-                    window.print();
+                    printWithoutBrowserTitle();
                     return;
                 }
                 if (action === "image") {
