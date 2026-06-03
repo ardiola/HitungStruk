@@ -2054,6 +2054,20 @@
                         />
                     </div>
                     <div class="friends-list" id="friendsList"></div>
+                    <div style="margin: 10px 0">
+                        <input
+                            type="text"
+                            id="friendSearchInput"
+                            placeholder="Cari nama teman..."
+                            oninput="filterFriendsList()"
+                            style="
+                                width: 80%;
+                                padding: 8px;
+                                border: 1px solid #ccc;
+                                border-radius: 4px;
+                            "
+                        />
+                    </div>
                     <div class="modal-actions">
                         <button
                             class="btn-reset"
@@ -2079,6 +2093,20 @@
                         Daftar user non-admin.
                     </p>
                     <div class="friends-list" id="adminUsersList"></div>
+                    <div style="margin: 10px 0">
+                        <input
+                            type="text"
+                            id="adminSearchInput"
+                            placeholder="Cari username..."
+                            oninput="filterAdminUsers()"
+                            style="
+                                width: 80%;
+                                padding: 8px;
+                                border: 1px solid #ccc;
+                                border-radius: 4px;
+                            "
+                        />
+                    </div>
                     <div class="modal-actions">
                         <button
                             class="btn-reset"
@@ -4420,7 +4448,21 @@
                 }
             }
 
+            function filterAdminUsers() {
+                const query = document
+                    .getElementById("adminSearchInput")
+                    .value.toLowerCase();
+                const filtered = adminUsersCache.filter((user) =>
+                    (user.username || "").toLowerCase().includes(query),
+                );
+                renderAdminUsersList(filtered);
+            }
+
             async function loadAdminUsers() {
+                // Reset search input
+                const searchInput = document.getElementById("adminSearchInput");
+                if (searchInput) searchInput.value = "";
+
                 renderListLoading("adminUsersList", "Memuat daftar user...");
                 try {
                     const response = await apiFetch("/api/users");
@@ -4555,7 +4597,22 @@
                 }
             }
 
+            function filterFriendsList() {
+                const query = document
+                    .getElementById("friendSearchInput")
+                    .value.toLowerCase();
+                const filtered = peopleCache.filter((person) =>
+                    (person.nama || "").toLowerCase().includes(query),
+                );
+                renderFriendsList(filtered);
+            }
+
             async function loadPeopleFromDb() {
+                // Reset search input
+                const searchInput =
+                    document.getElementById("friendSearchInput");
+                if (searchInput) searchInput.value = "";
+
                 renderListLoading("friendsList", "Memuat daftar teman...");
                 try {
                     const response = await apiFetch("/api/people");

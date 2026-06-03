@@ -772,11 +772,9 @@ app.post("/api/bills", authenticate, async (req, res) => {
     taxAmount < 0 ||
     grandTotal < 0
   ) {
-    return res
-      .status(400)
-      .json({
-        error: "Nilai total, diskon, pajak, dan grand total harus angka valid",
-      });
+    return res.status(400).json({
+      error: "Nilai total, diskon, pajak, dan grand total harus angka valid",
+    });
   }
   if (!isValidPositiveInt(splitCount, MAX_SPLIT_COUNT)) {
     return res
@@ -811,11 +809,9 @@ app.post("/api/bills", authenticate, async (req, res) => {
             : Number(rawPersonId);
 
         if (!billItemName || billItemName.length > MAX_PERSON_NAME_LENGTH) {
-          return res
-            .status(400)
-            .json({
-              error: `Nama item bill wajib diisi dan maksimal ${MAX_PERSON_NAME_LENGTH} karakter`,
-            });
+          return res.status(400).json({
+            error: `Nama item bill wajib diisi dan maksimal ${MAX_PERSON_NAME_LENGTH} karakter`,
+          });
         }
         if (!isFiniteNumber(billItemAmount) || billItemAmount < 0) {
           return res
@@ -823,11 +819,9 @@ app.post("/api/bills", authenticate, async (req, res) => {
             .json({ error: "Nominal item bill harus angka valid" });
         }
         if (billPersonName && billPersonName.length > MAX_PERSON_NAME_LENGTH) {
-          return res
-            .status(400)
-            .json({
-              error: `Nama orang maksimal ${MAX_PERSON_NAME_LENGTH} karakter`,
-            });
+          return res.status(400).json({
+            error: `Nama orang maksimal ${MAX_PERSON_NAME_LENGTH} karakter`,
+          });
         }
         if (billPersonId !== null && !isValidPositiveInt(billPersonId)) {
           return res
