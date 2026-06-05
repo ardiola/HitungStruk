@@ -1374,6 +1374,17 @@
                     padding: 8px 28px 8px 12px;
                 }
 
+                .ocr-split-row {
+                    margin-left: 28px;
+                    width: calc(100% - 28px);
+                    flex-wrap: wrap;
+                }
+
+                .ocr-split-label {
+                    width: 100%;
+                    margin-bottom: 2px;
+                }
+
                 .ocr-custom-split-wrap {
                     padding-left: 28px;
                     gap: 8px;
@@ -1686,6 +1697,17 @@
                 transition:
                     border-color 0.15s,
                     box-shadow 0.15s;
+            }
+            .ocr-split-label {
+                font-size: 12px;
+                color: #64748b;
+                font-weight: 500;
+                white-space: nowrap;
+            }
+            .ocr-split-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
             .ocr-split-select:hover {
                 border-color: #2563eb;
@@ -5606,10 +5628,13 @@
                     .map((item, idx) => {
                         const splitSelect =
                             splitCount > 1
-                                ? `<select class="ocr-split-select" onchange="setOcrItemSplitMode(${idx}, this.value)">
-                                <option value="all" ${item.splitMode === "all" ? "selected" : ""}>Semua Orang</option>
-                                <option value="custom" ${item.splitMode === "custom" ? "selected" : ""}>Dibagi per Orang</option>
-                            </select>`
+                                ? `<div class="ocr-split-row">
+                                <label class="ocr-split-label">Dibagi Ke:</label>
+                                <select class="ocr-split-select" onchange="setOcrItemSplitMode(${idx}, this.value)">
+                                    <option value="all" ${item.splitMode === "all" ? "selected" : ""}>Semua Orang</option>
+                                    <option value="custom" ${item.splitMode === "custom" ? "selected" : ""}>Dibagi per Orang</option>
+                                </select>
+                            </div>`
                                 : "";
 
                         let customSplitHtml = "";
