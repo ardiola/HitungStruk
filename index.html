@@ -2082,7 +2082,13 @@
                     type="file"
                     id="ocrImageInput"
                     accept="image/*"
-                    style="display: none"
+                    style="
+                        position: absolute;
+                        opacity: 0;
+                        width: 0;
+                        height: 0;
+                        pointer-events: none;
+                    "
                     onchange="handleOcrImage(this)"
                 />
                 <img
