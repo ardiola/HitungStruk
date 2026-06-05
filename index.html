@@ -9,7 +9,9 @@
         <meta name="apple-mobile-web-app-title" content="Struk Tagihan" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+        <link rel="icon" type="image/png" href="/icons/icon-192.png" />
         <title>Struk Tagihan</title>
+        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
         <style>
             * {
                 box-sizing: border-box;
@@ -1341,6 +1343,50 @@
                     width: 100%;
                     min-height: 44px;
                 }
+
+                #ocrModal .modal-content {
+                    max-width: 100%;
+                    width: 100%;
+                    margin: 8px;
+                    padding: 16px;
+                }
+
+                .ocr-result-item {
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+
+                .ocr-result-item label {
+                    width: calc(100% - 36px);
+                }
+
+                .ocr-result-item .ocr-price {
+                    margin-left: 28px;
+                    width: 100%;
+                    color: #64748b;
+                }
+
+                .ocr-split-select {
+                    margin-left: 28px;
+                    width: calc(100% - 28px);
+                    min-height: 40px;
+                    font-size: 13px;
+                    padding: 8px 28px 8px 12px;
+                }
+
+                .ocr-custom-split-wrap {
+                    padding-left: 28px;
+                    gap: 8px;
+                }
+
+                .ocr-chip-text {
+                    padding: 8px 14px;
+                    font-size: 13px;
+                }
+
+                .ocr-item-row-wrap {
+                    padding: 14px 0;
+                }
             }
 
             @media print {
@@ -1524,6 +1570,180 @@
                 background: white;
                 border: 1px solid #ddd;
                 border-radius: 8px;
+            }
+            .ocr-btn-scan {
+                grid-column: 1 / -1;
+                background-color: #2563eb;
+                color: white;
+                padding: 10px 18px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 16px;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+            .ocr-btn-scan:hover {
+                background-color: #1d4ed8;
+            }
+            .ocr-preview {
+                grid-column: 1 / -1;
+                max-width: 100%;
+                max-height: 200px;
+                border-radius: 6px;
+                margin-top: 10px;
+                display: block;
+                border: 1px solid #ddd;
+            }
+            .ocr-result-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 0;
+                border-bottom: 1px solid #eee;
+            }
+            .ocr-result-item:last-child {
+                border-bottom: none;
+            }
+            .ocr-result-item input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            .ocr-result-item label {
+                flex: 1;
+                cursor: pointer;
+                color: #2c3e50;
+                font-size: 14px;
+            }
+            .ocr-result-item .ocr-price {
+                color: #555;
+                font-size: 0.9em;
+                white-space: nowrap;
+            }
+            .ocr-results-container {
+                max-height: 300px;
+                overflow-y: auto;
+                margin: 10px 0;
+                padding: 0 4px;
+            }
+            #ocrModal .modal-content {
+                max-width: 520px;
+            }
+            .ocr-item-row-wrap {
+                border-bottom: 1px solid #eee;
+                padding: 10px 0;
+            }
+            .ocr-item-row-wrap:last-child {
+                border-bottom: none;
+            }
+            .ocr-result-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .ocr-result-item input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+                flex-shrink: 0;
+                accent-color: #2563eb;
+            }
+            .ocr-result-item label {
+                flex: 1;
+                cursor: pointer;
+                color: #2c3e50;
+                font-size: 14px;
+                font-weight: 500;
+                line-height: 1.3;
+            }
+            .ocr-result-item .ocr-price {
+                color: #555;
+                font-size: 0.9em;
+                white-space: nowrap;
+                font-weight: 500;
+            }
+            .ocr-split-select {
+                appearance: none;
+                -webkit-appearance: none;
+                font-size: 12px;
+                padding: 6px 24px 6px 10px;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 999px;
+                background: #f8fafc
+                    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")
+                    no-repeat right 8px center;
+                background-size: 12px 12px;
+                color: #2563eb;
+                cursor: pointer;
+                flex-shrink: 0;
+                font-weight: 600;
+                min-width: 130px;
+                transition:
+                    border-color 0.15s,
+                    box-shadow 0.15s;
+            }
+            .ocr-split-select:hover {
+                border-color: #2563eb;
+            }
+            .ocr-split-select:focus {
+                outline: none;
+                border-color: #2563eb;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            }
+            .ocr-custom-split-wrap {
+                margin-top: 8px;
+                padding-left: 28px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                align-items: center;
+            }
+            .ocr-chip {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                cursor: pointer;
+            }
+            .ocr-chip input {
+                position: absolute;
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .ocr-chip-text {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 5px 12px;
+                border-radius: 999px;
+                border: 1.5px solid #e2e8f0;
+                background: #f8fafc;
+                color: #475569;
+                font-size: 12px;
+                font-weight: 500;
+                transition: all 0.15s ease;
+                user-select: none;
+            }
+            .ocr-chip-text:hover {
+                border-color: #93c5fd;
+                background: #eff6ff;
+            }
+            .ocr-chip input:checked + .ocr-chip-text {
+                background: #2563eb;
+                border-color: #2563eb;
+                color: #fff;
+            }
+            .ocr-chip input:checked + .ocr-chip-text:hover {
+                background: #1d4ed8;
+                border-color: #1d4ed8;
+            }
+            .ocr-chip input:focus-visible + .ocr-chip-text {
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
             }
         </style>
     </head>
@@ -1851,6 +2071,25 @@
                 >
                     Tambah Item
                 </button>
+                <button
+                    type="button"
+                    class="ocr-btn-scan"
+                    onclick="document.getElementById('ocrImageInput').click()"
+                >
+                    Scan Struk
+                </button>
+                <input
+                    type="file"
+                    id="ocrImageInput"
+                    accept="image/*"
+                    style="display: none"
+                    onchange="handleOcrImage(this)"
+                />
+                <img
+                    id="ocrPreview"
+                    class="ocr-preview"
+                    style="display: none"
+                />
             </div>
 
             <div id="personInputsContainer">
@@ -2383,6 +2622,34 @@
                             onclick="closeSplitWarningModal()"
                         >
                             OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                id="ocrModal"
+                class="modal-overlay"
+                onclick="handleOcrModalBackdrop(event)"
+            >
+                <div class="modal-content">
+                    <h3 class="modal-title">Hasil Scan Struk</h3>
+                    <p
+                        style="
+                            margin: 0 0 10px;
+                            color: #6b778c;
+                            font-size: 14px;
+                        "
+                    >
+                        Pilih item yang ingin ditambahkan.
+                    </p>
+                    <div id="ocrResults" class="ocr-results-container"></div>
+                    <div class="modal-actions">
+                        <button class="btn-reset" onclick="closeOcrModal()">
+                            Batal
+                        </button>
+                        <button class="btn-add" onclick="importOcrItems()">
+                            Tambah Terpilih
                         </button>
                     </div>
                 </div>
@@ -3754,6 +4021,14 @@
                     ".person-bills-section",
                 );
                 if (existingBills) existingBills.remove();
+                // Clear OCR preview and input
+                const ocrPreview = document.getElementById("ocrPreview");
+                if (ocrPreview) {
+                    ocrPreview.src = "";
+                    ocrPreview.style.display = "none";
+                }
+                const ocrImageInput = document.getElementById("ocrImageInput");
+                if (ocrImageInput) ocrImageInput.value = "";
                 renderTable();
                 calculateTotal();
             }
@@ -5055,6 +5330,402 @@
                 }
             }
 
+            let ocrParsedItems = [];
+
+            function handleOcrImage(input) {
+                const file = input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const preview = document.getElementById("ocrPreview");
+                    preview.src = e.target.result;
+                    preview.style.display = "block";
+                    runOcr(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            async function runOcr(imageDataUrl) {
+                if (typeof Tesseract === "undefined") {
+                    openWarningModal(
+                        "OCR Tidak Tersedia",
+                        "Library OCR gagal dimuat. Periksa koneksi internet.",
+                    );
+                    return;
+                }
+
+                showLoading("Membaca struk...");
+
+                try {
+                    const worker = await Tesseract.createWorker("ind");
+                    const ret = await worker.recognize(imageDataUrl);
+                    await worker.terminate();
+
+                    const text = ret.data.text;
+                    ocrParsedItems = parseReceiptText(text);
+                    ocrParsedItems.forEach((item) => {
+                        item.splitMode = "all";
+                        item.sharedWith = [];
+                    });
+
+                    hideLoading();
+
+                    if (ocrParsedItems.length === 0) {
+                        openWarningModal(
+                            "Tidak Terbaca",
+                            "Tidak ditemukan item pada struk. Coba foto yang lebih jelas.",
+                        );
+                        return;
+                    }
+
+                    renderOcrResults();
+                    openOcrModal();
+                } catch (err) {
+                    hideLoading();
+                    console.error("OCR error:", err);
+                    openWarningModal(
+                        "OCR Gagal",
+                        "Terjadi kesalahan saat membaca struk: " + err.message,
+                    );
+                }
+            }
+
+            function parseReceiptText(text) {
+                const lines = text
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter((l) => l.length > 1);
+                const skipKeywords = [
+                    "total",
+                    "bayar",
+                    "kembali",
+                    "pajak",
+                    "tax",
+                    "diskon",
+                    "discount",
+                    "subtotal",
+                    "sub total",
+                    "grand total",
+                    "terima kasih",
+                    "thank you",
+                    "cash",
+                    "change",
+                    "selamat",
+                    "struk",
+                    "receipt",
+                    "invoice",
+                    "no.",
+                    "nomor",
+                    "tgl",
+                    "tanggal",
+                    "waktu",
+                    "kasir",
+                    "member",
+                    "voucher",
+                    "promo",
+                    "senin",
+                    "selasa",
+                    "rabu",
+                    "kamis",
+                    "jumat",
+                    "sabtu",
+                    "minggu",
+                    "jan",
+                    "feb",
+                    "mar",
+                    "apr",
+                    "mei",
+                    "jun",
+                    "jul",
+                    "agu",
+                    "sep",
+                    "okt",
+                    "nov",
+                    "des",
+                ];
+
+                const results = [];
+
+                for (const line of lines) {
+                    const lower = line.toLowerCase();
+                    if (skipKeywords.some((k) => lower.includes(k))) continue;
+
+                    const matches = [...line.matchAll(/[\d.,]+/g)];
+                    if (matches.length === 0) continue;
+
+                    const values = [];
+                    for (const m of matches) {
+                        const raw = m[0];
+                        let numStr = raw;
+
+                        const commaParts = raw.split(",");
+                        const dotParts = raw.split(".");
+
+                        if (
+                            commaParts.length === 2 &&
+                            commaParts[1].length <= 2 &&
+                            dotParts.length === 1
+                        ) {
+                            numStr = raw.replace(",", ".");
+                        } else if (
+                            dotParts.length > 1 &&
+                            dotParts[dotParts.length - 1].length === 3 &&
+                            raw.indexOf(",") === -1
+                        ) {
+                            numStr = raw.replace(/\./g, "");
+                        } else if (
+                            dotParts.length === 2 &&
+                            dotParts[1].length <= 2 &&
+                            raw.indexOf(",") === -1
+                        ) {
+                            numStr = raw;
+                        } else {
+                            numStr = raw.replace(/,/g, "");
+                        }
+
+                        const val = parseFloat(numStr);
+                        if (!isNaN(val) && val >= 0) values.push(val);
+                    }
+
+                    if (values.length === 0) continue;
+
+                    const lastVal = values[values.length - 1];
+                    if (lastVal < 100) continue;
+
+                    let qty = 1;
+                    let price = lastVal;
+
+                    if (values.length >= 3) {
+                        const first = values[0];
+                        const mid = values[values.length - 2];
+                        if (
+                            first >= 1 &&
+                            first <= 999 &&
+                            Number.isInteger(first)
+                        ) {
+                            const calcPrice = lastVal / first;
+                            if (Math.abs(calcPrice - mid) < 1 && mid >= 100) {
+                                qty = first;
+                                price = Math.round(mid);
+                            } else if (
+                                calcPrice >= 100 &&
+                                Math.abs(calcPrice - Math.round(calcPrice)) <
+                                    0.01
+                            ) {
+                                qty = first;
+                                price = Math.round(calcPrice);
+                            }
+                        }
+                    } else if (values.length === 2) {
+                        const first = values[0];
+                        if (
+                            first >= 1 &&
+                            first <= 999 &&
+                            Number.isInteger(first)
+                        ) {
+                            const calcPrice = lastVal / first;
+                            if (
+                                calcPrice >= 100 &&
+                                Math.abs(calcPrice - Math.round(calcPrice)) <
+                                    0.01
+                            ) {
+                                qty = first;
+                                price = Math.round(calcPrice);
+                            }
+                        }
+                    }
+
+                    let name = line
+                        .replace(/[\d.,]+/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+
+                    if (!name || name.length < 2) continue;
+
+                    results.push({
+                        name: name,
+                        price: price,
+                        quantity: qty,
+                        selected: true,
+                    });
+                }
+
+                return results;
+            }
+
+            function renderOcrResults() {
+                const container = document.getElementById("ocrResults");
+                if (!container) return;
+
+                const splitCount =
+                    parseInt(
+                        document.getElementById("splitCount")?.value,
+                        10,
+                    ) || 1;
+
+                container.innerHTML = ocrParsedItems
+                    .map((item, idx) => {
+                        const splitSelect =
+                            splitCount > 1
+                                ? `<select class="ocr-split-select" onchange="setOcrItemSplitMode(${idx}, this.value)">
+                                <option value="all" ${item.splitMode === "all" ? "selected" : ""}>Semua Orang</option>
+                                <option value="custom" ${item.splitMode === "custom" ? "selected" : ""}>Dibagi per Orang</option>
+                            </select>`
+                                : "";
+
+                        let customSplitHtml = "";
+                        if (splitCount > 1 && item.splitMode === "custom") {
+                            const personChips = [];
+                            for (let p = 1; p <= splitCount; p++) {
+                                const personName = getPersonDisplayName(p);
+                                const checked = item.sharedWith.includes(p)
+                                    ? "checked"
+                                    : "";
+                                const chipId = `ocrChip_${idx}_${p}`;
+                                personChips.push(
+                                    `<label class="ocr-chip" for="${chipId}">
+                                        <input type="checkbox" id="${chipId}" ${checked} onchange="toggleOcrItemPerson(${idx}, ${p}, this.checked)">
+                                        <span class="ocr-chip-text">${escapeHtml(personName)}</span>
+                                    </label>`,
+                                );
+                            }
+                            customSplitHtml = `<div class="ocr-custom-split-wrap">${personChips.join("")}</div>`;
+                        }
+
+                        return `
+                    <div class="ocr-item-row-wrap">
+                        <div class="ocr-result-item">
+                            <input type="checkbox" id="ocrItem_${idx}" ${item.selected ? "checked" : ""} onchange="toggleOcrItem(${idx})">
+                            <label for="ocrItem_${idx}">${escapeHtml(item.name)}</label>
+                            <span class="ocr-price">${formatNumber(item.price)} x${item.quantity}</span>
+                            ${splitSelect}
+                        </div>
+                        ${customSplitHtml}
+                    </div>
+                `;
+                    })
+                    .join("");
+            }
+
+            function toggleOcrItem(index) {
+                if (ocrParsedItems[index]) {
+                    ocrParsedItems[index].selected =
+                        !ocrParsedItems[index].selected;
+                }
+            }
+
+            function setOcrItemSplitMode(index, mode) {
+                if (ocrParsedItems[index]) {
+                    ocrParsedItems[index].splitMode = mode;
+                    if (mode === "all") {
+                        ocrParsedItems[index].sharedWith = [];
+                    }
+                    renderOcrResults();
+                }
+            }
+
+            function toggleOcrItemPerson(index, personNumber, checked) {
+                if (!ocrParsedItems[index]) return;
+                const shared = ocrParsedItems[index].sharedWith;
+                if (checked) {
+                    if (!shared.includes(personNumber)) {
+                        shared.push(personNumber);
+                    }
+                } else {
+                    const idx = shared.indexOf(personNumber);
+                    if (idx !== -1) shared.splice(idx, 1);
+                }
+            }
+
+            function openOcrModal() {
+                const modal = document.getElementById("ocrModal");
+                if (modal) modal.classList.add("show");
+            }
+
+            function closeOcrModal() {
+                const modal = document.getElementById("ocrModal");
+                if (modal) modal.classList.remove("show");
+            }
+
+            function handleOcrModalBackdrop(event) {
+                if (event.target.id === "ocrModal") {
+                    closeOcrModal();
+                }
+            }
+
+            function importOcrItems() {
+                let addedCount = 0;
+                const splitCount =
+                    parseInt(document.getElementById("splitCount").value, 10) ||
+                    1;
+
+                for (const item of ocrParsedItems) {
+                    if (!item.selected) continue;
+
+                    if (
+                        splitCount > 1 &&
+                        item.splitMode === "custom" &&
+                        item.sharedWith.length === 0
+                    ) {
+                        openWarningModal(
+                            "Pembagian Belum Lengkap",
+                            `Pilih minimal satu orang untuk item: ${escapeHtml(item.name)}`,
+                        );
+                        return;
+                    }
+                }
+
+                for (const item of ocrParsedItems) {
+                    if (!item.selected) continue;
+
+                    const newItem = {
+                        id: Date.now() + Math.random(),
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        subtotal: item.price * item.quantity,
+                        isTax: false,
+                    };
+
+                    if (splitCount > 1) {
+                        if (item.splitMode === "custom") {
+                            newItem.sharedWith = [...item.sharedWith];
+                            newItem.sharedWithNames = item.sharedWith.map(
+                                (personNumber) =>
+                                    getPersonDisplayName(personNumber),
+                            );
+                        } else {
+                            newItem.sharedAll = true;
+                        }
+                    }
+
+                    items.push(newItem);
+                    addedCount++;
+                }
+
+                renderTable();
+                calculateTotal();
+                closeOcrModal();
+
+                const preview = document.getElementById("ocrPreview");
+                if (preview) {
+                    preview.src = "";
+                    preview.style.display = "none";
+                }
+                document.getElementById("ocrImageInput").value = "";
+
+                showToast(
+                    addedCount + " item dari struk berhasil ditambahkan.",
+                );
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement("div");
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
             document.addEventListener("DOMContentLoaded", function () {
                 checkAuthOnLoad();
                 registerServiceWorker();
@@ -5075,6 +5746,7 @@
                     closeLogoutConfirmModal();
                     closeSplitWarningModal();
                     closeItemPeoplePickerModal();
+                    closeOcrModal();
                 }
             });
 

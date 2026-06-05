@@ -41,11 +41,19 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "'unsafe-eval'",
+          "https://cdn.jsdelivr.net",
+          "blob:",
+          "data:",
+        ],
         scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", "https://cdn.jsdelivr.net", "blob:", "data:"],
+        workerSrc: ["'self'", "blob:", "https://cdn.jsdelivr.net"],
         fontSrc: ["'self'", "data:"],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
