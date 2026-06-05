@@ -5395,13 +5395,15 @@
                 const lines = text
                     .split("\n")
                     .map((l) => l.trim())
-                    .filter((l) => l.length > 1);
+                    .filter((l) => l.length > 2);
+
                 const skipKeywords = [
                     "total",
                     "bayar",
                     "kembali",
                     "pajak",
                     "tax",
+                    "ppn",
                     "diskon",
                     "discount",
                     "subtotal",
@@ -5415,45 +5417,56 @@
                     "struk",
                     "receipt",
                     "invoice",
-                    "no.",
-                    "nomor",
-                    "tgl",
-                    "tanggal",
-                    "waktu",
-                    "kasir",
                     "member",
                     "voucher",
                     "promo",
-                    "senin",
-                    "selasa",
-                    "rabu",
-                    "kamis",
-                    "jumat",
-                    "sabtu",
-                    "minggu",
-                    "jan",
-                    "feb",
-                    "mar",
-                    "apr",
-                    "mei",
-                    "jun",
-                    "jul",
-                    "agu",
-                    "sep",
-                    "okt",
-                    "nov",
-                    "des",
+                    "tunai",
+                    "kartu",
+                    "debit",
+                    "kredit",
+                    "qris",
+                    "gopay",
+                    "ovo",
+                    "dana",
+                    "shopeepay",
                 ];
+
+                const datePattern =
+                    /\d{2}[\/\-]\d{2}[\/\-]\d{2,4}|\d{1,2}\s+(jan|feb|mar|apr|mei|jun|jul|agu|sep|okt|nov|des)/i;
+                const timePattern = /\d{1,2}:\d{2}(?::\d{2})?/;
+                const phonePattern = /0\d{3,4}[\s-]*\d{3,4}[\s-]*\d{3,4}/;
+                const receiptNoPattern =
+                    /(?:no|nomor|invoice|ref|inv)[.:#:\s]*[\w\-]+/i;
 
                 const results = [];
 
                 for (const line of lines) {
                     const lower = line.toLowerCase();
+
+                    // Skip lines with known non-item keywords
                     if (skipKeywords.some((k) => lower.includes(k))) continue;
 
+                    // Skip lines that are clearly dates, times, phone numbers, or receipt numbers
+                    if (datePattern.test(line)) continue;
+                    if (phonePattern.test(line)) continue;
+                    if (receiptNoPattern.test(line)) {
+                        // Only skip if there are no price-like numbers
+                        const hasPrice = /[\d,.]{4,}/.test(line);
+                        if (!hasPrice) continue;
+                    }
+
+                    // Skip very short lines that are just noise
+                    if (line.length < 3) continue;
+
+                    // Skip lines that are only spaces/special chars
+                    const alphaCount = (line.match(/[a-zA-Z]/g) || []).length;
+                    if (alphaCount === 0) continue;
+
+                    // Extract all numeric-like tokens
                     const matches = [...line.matchAll(/[\d.,]+/g)];
                     if (matches.length === 0) continue;
 
+                    // Parse values with Indonesian number format handling
                     const values = [];
                     for (const m of matches) {
                         const raw = m[0];
@@ -5462,19 +5475,24 @@
                         const commaParts = raw.split(",");
                         const dotParts = raw.split(".");
 
+                        // Indonesian format: 25.000 (thousands with dot)
                         if (
-                            commaParts.length === 2 &&
-                            commaParts[1].length <= 2 &&
-                            dotParts.length === 1
-                        ) {
-                            numStr = raw.replace(",", ".");
-                        } else if (
                             dotParts.length > 1 &&
                             dotParts[dotParts.length - 1].length === 3 &&
                             raw.indexOf(",") === -1
                         ) {
                             numStr = raw.replace(/\./g, "");
-                        } else if (
+                        }
+                        // European decimal: 25,50
+                        else if (
+                            commaParts.length === 2 &&
+                            commaParts[1].length <= 2 &&
+                            dotParts.length === 1
+                        ) {
+                            numStr = raw.replace(",", ".");
+                        }
+                        // Standard decimal: 25.50
+                        else if (
                             dotParts.length === 2 &&
                             dotParts[1].length <= 2 &&
                             raw.indexOf(",") === -1
@@ -5485,63 +5503,83 @@
                         }
 
                         const val = parseFloat(numStr);
-                        if (!isNaN(val) && val >= 0) values.push(val);
+                        if (!isNaN(val) && val > 0) values.push(val);
                     }
 
                     if (values.length === 0) continue;
 
+                    // Find the price value - prefer values that look like Indonesian prices
+                    // (usually >= 1000, often ending in 000 or 500)
                     const lastVal = values[values.length - 1];
-                    if (lastVal < 100) continue;
+
+                    // If the last number is too small to be a price, skip
+                    if (lastVal < 1000) {
+                        // Check if any value in the line looks like a price
+                        const priceValue = values.find((v) => v >= 1000);
+                        if (!priceValue) continue;
+                    }
 
                     let qty = 1;
-                    let price = lastVal;
+                    let price =
+                        lastVal >= 1000
+                            ? lastVal
+                            : values.find((v) => v >= 1000) || lastVal;
 
-                    if (values.length >= 3) {
-                        const first = values[0];
-                        const mid = values[values.length - 2];
+                    // Detect quantity from small integers
+                    if (values.length >= 2) {
+                        // Check first value as quantity
+                        const firstVal = values[0];
                         if (
-                            first >= 1 &&
-                            first <= 999 &&
-                            Number.isInteger(first)
+                            firstVal >= 1 &&
+                            firstVal <= 99 &&
+                            Number.isInteger(firstVal)
                         ) {
-                            const calcPrice = lastVal / first;
-                            if (Math.abs(calcPrice - mid) < 1 && mid >= 100) {
-                                qty = first;
-                                price = Math.round(mid);
-                            } else if (
-                                calcPrice >= 100 &&
-                                Math.abs(calcPrice - Math.round(calcPrice)) <
-                                    0.01
-                            ) {
-                                qty = first;
-                                price = Math.round(calcPrice);
-                            }
-                        }
-                    } else if (values.length === 2) {
-                        const first = values[0];
-                        if (
-                            first >= 1 &&
-                            first <= 999 &&
-                            Number.isInteger(first)
-                        ) {
-                            const calcPrice = lastVal / first;
+                            // Check if lastVal / firstVal gives a clean price
+                            const candidatePrice = lastVal / firstVal;
                             if (
-                                calcPrice >= 100 &&
-                                Math.abs(calcPrice - Math.round(calcPrice)) <
-                                    0.01
+                                candidatePrice >= 1000 &&
+                                Math.abs(
+                                    candidatePrice - Math.round(candidatePrice),
+                                ) < 1
                             ) {
-                                qty = first;
-                                price = Math.round(calcPrice);
+                                qty = firstVal;
+                                price = Math.round(candidatePrice);
                             }
                         }
                     }
 
+                    // Check for quantity with 'x' prefix/suffix (e.g., "x2" or "2x")
+                    const xMatch =
+                        line.match(/x\s*(\d+)/i) || line.match(/(\d+)\s*x/i);
+                    if (xMatch) {
+                        const xQty = parseInt(xMatch[1], 10);
+                        if (xQty >= 1 && xQty <= 99) {
+                            qty = xQty;
+                            // Recalculate price from last value
+                            price = Math.round(lastVal / qty);
+                        }
+                    }
+
+                    // Extract item name: remove price numbers and quantity indicators
                     let name = line
                         .replace(/[\d.,]+/g, " ")
+                        .replace(/x\s*\d+/gi, " ")
+                        .replace(/\d+\s*x/gi, " ")
+                        .replace(/[#@|\-*]/g, " ")
                         .replace(/\s+/g, " ")
                         .trim();
 
+                    // Clean up common prefixes/suffixes
+                    name = name
+                        .replace(/^[:\-\s]+/, "")
+                        .replace(/[:\-\s]+$/, "");
+
                     if (!name || name.length < 2) continue;
+
+                    // Additional validation: price should be reasonable (1000 - 100M)
+                    if (price < 1000 || price > 100000000) continue;
+                    // Quantity should be reasonable (1-999)
+                    if (qty < 1 || qty > 999) continue;
 
                     results.push({
                         name: name,
