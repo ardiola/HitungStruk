@@ -1605,9 +1605,45 @@
                 max-width: 100%;
                 max-height: 200px;
                 border-radius: 6px;
-                margin-top: 10px;
                 display: block;
                 border: 1px solid #ddd;
+            }
+            .ocr-preview-wrap {
+                grid-column: 1 / -1;
+                position: relative;
+                display: inline-block;
+                margin-top: 10px;
+            }
+            .ocr-preview-wrap img {
+                max-width: 100%;
+                max-height: 200px;
+                border-radius: 6px;
+                display: block;
+                border: 1px solid #ddd;
+            }
+            .ocr-btn-remove-img {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                background: #ef4444;
+                color: white;
+                border: 2px solid white;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                line-height: 1;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+                padding: 0;
+                z-index: 2;
+                transition: background-color 0.15s;
+            }
+            .ocr-btn-remove-img:hover {
+                background: #dc2626;
             }
             .ocr-result-item {
                 display: flex;
@@ -2107,11 +2143,21 @@
                     style="display: none"
                     onchange="handleOcrImage(this)"
                 />
-                <img
-                    id="ocrPreview"
-                    class="ocr-preview"
+                <div
+                    id="ocrPreviewWrap"
+                    class="ocr-preview-wrap"
                     style="display: none"
-                />
+                >
+                    <img id="ocrPreview" class="ocr-preview" />
+                    <button
+                        type="button"
+                        class="ocr-btn-remove-img"
+                        onclick="removeOcrImage()"
+                        title="Hapus gambar"
+                    >
+                        ✕
+                    </button>
+                </div>
             </div>
 
             <div id="personInputsContainer">
@@ -4045,9 +4091,13 @@
                 if (existingBills) existingBills.remove();
                 // Clear OCR preview and input
                 const ocrPreview = document.getElementById("ocrPreview");
+                const ocrPreviewWrap =
+                    document.getElementById("ocrPreviewWrap");
                 if (ocrPreview) {
                     ocrPreview.src = "";
-                    ocrPreview.style.display = "none";
+                }
+                if (ocrPreviewWrap) {
+                    ocrPreviewWrap.style.display = "none";
                 }
                 const ocrImageInput = document.getElementById("ocrImageInput");
                 if (ocrImageInput) ocrImageInput.value = "";
@@ -5361,8 +5411,10 @@
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     const preview = document.getElementById("ocrPreview");
+                    const previewWrap =
+                        document.getElementById("ocrPreviewWrap");
                     preview.src = e.target.result;
-                    preview.style.display = "block";
+                    previewWrap.style.display = "block";
                     runOcr(e.target.result);
                 };
                 reader.readAsDataURL(file);
@@ -5671,6 +5723,19 @@
                     .join("");
             }
 
+            function removeOcrImage() {
+                const preview = document.getElementById("ocrPreview");
+                const previewWrap = document.getElementById("ocrPreviewWrap");
+                if (preview) {
+                    preview.src = "";
+                }
+                if (previewWrap) {
+                    previewWrap.style.display = "none";
+                }
+                document.getElementById("ocrImageInput").value = "";
+                ocrParsedItems = [];
+            }
+
             function toggleOcrItem(index) {
                 if (ocrParsedItems[index]) {
                     ocrParsedItems[index].selected =
@@ -5772,9 +5837,12 @@
                 closeOcrModal();
 
                 const preview = document.getElementById("ocrPreview");
+                const previewWrap = document.getElementById("ocrPreviewWrap");
                 if (preview) {
                     preview.src = "";
-                    preview.style.display = "none";
+                }
+                if (previewWrap) {
+                    previewWrap.style.display = "none";
                 }
                 document.getElementById("ocrImageInput").value = "";
 
