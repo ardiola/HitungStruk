@@ -8,6 +8,7 @@ const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const { createClient } = require("@libsql/client");
 const crypto = require("crypto");
+const { spawn } = require("child_process");
 const util = require("util");
 const path = require("path");
 const scryptAsync = util.promisify(crypto.scrypt);
@@ -16,17 +17,22 @@ const app = express();
 const port = 3000;
 const dbUrl = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
-const MAX_JSON_BODY_SIZE = "64kb";
+const MAX_JSON_BODY_SIZE = process.env.MAX_JSON_BODY_SIZE || "12mb";
 const MAX_USERNAME_LENGTH = 32;
 const MAX_PASSWORD_LENGTH = 128;
 const MAX_PERSON_NAME_LENGTH = 80;
 const MAX_REKENING_LENGTH = 30;
 const MAX_SPLIT_COUNT = 100;
 const MAX_PERSON_BILLS = 200;
+const MAX_OCR_IMAGE_DATA_URL_LENGTH = 10 * 1024 * 1024;
 const AUTH_COOKIE_NAME = "auth_token";
 const LOGIN_LOCK_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_LOCK_THRESHOLD = 8;
 const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000;
+const OCR_PROCESS_TIMEOUT_MS = 120 * 1000;
+const OCR_MAX_BUFFER_SIZE = 8 * 1024 * 1024;
+const OCR_PYTHON_COMMAND = process.env.OCR_PYTHON_COMMAND || "python";
+const OCR_SCRIPT_PATH = path.join(__dirname, "ocr_paddle.py");
 
 const parsedAllowedOrigins = String(process.env.CORS_ALLOWED_ORIGINS || "")
   .split(",")
@@ -217,6 +223,85 @@ function sendServerError(res, err, context) {
     console.error(err);
   }
   return res.status(500).json({ error: "Terjadi kesalahan pada server" });
+}
+
+function runPythonOcr(imageDataUrl) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(OCR_PYTHON_COMMAND, [OCR_SCRIPT_PATH], {
+      cwd: __dirname,
+      windowsHide: true,
+    });
+
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+
+    const timeout = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      child.kill();
+      reject(new Error("Proses OCR timeout"));
+    }, OCR_PROCESS_TIMEOUT_MS);
+
+    child.stdout.on("data", (chunk) => {
+      if (settled) {
+        return;
+      }
+      stdout += chunk.toString();
+      if (stdout.length > OCR_MAX_BUFFER_SIZE) {
+        settled = true;
+        clearTimeout(timeout);
+        child.kill();
+        reject(new Error("Output OCR terlalu besar"));
+      }
+    });
+
+    child.stderr.on("data", (chunk) => {
+      if (settled) {
+        return;
+      }
+      stderr += chunk.toString();
+    });
+
+    child.on("error", (err) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
+      reject(err);
+    });
+
+    child.on("close", (code) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
+      if (code !== 0) {
+        const error = new Error("Proses OCR Python gagal");
+        error.stderr = stderr;
+        error.code = code;
+        return reject(error);
+      }
+      try {
+        // Filter out non-JSON lines (like PaddleOCR download progress)
+        const jsonStart = stdout.indexOf("{");
+        const jsonStr = jsonStart >= 0 ? stdout.slice(jsonStart) : stdout;
+        const parsed = JSON.parse(jsonStr || "{}");
+        return resolve(parsed);
+      } catch (parseErr) {
+        parseErr.stderr = stderr;
+        parseErr.stdout = stdout;
+        return reject(parseErr);
+      }
+    });
+
+    child.stdin.write(JSON.stringify({ imageDataUrl }));
+    child.stdin.end();
+  });
 }
 
 function getClientIp(req) {
@@ -881,6 +966,43 @@ app.get("/api/bills/:id", authenticate, async (req, res) => {
     res.json(bill);
   } catch (err) {
     sendServerError(res, err, "bills-detail");
+  }
+});
+
+app.post("/api/ocr", authenticate, async (req, res) => {
+  const imageDataUrl = String(req.body?.imageDataUrl || "");
+  if (!imageDataUrl) {
+    return res.status(400).json({ error: "imageDataUrl wajib diisi" });
+  }
+  if (!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(imageDataUrl)) {
+    return res.status(400).json({ error: "Format gambar tidak valid" });
+  }
+  if (imageDataUrl.length > MAX_OCR_IMAGE_DATA_URL_LENGTH) {
+    return res.status(413).json({ error: "Ukuran gambar terlalu besar" });
+  }
+
+  try {
+    const result = await runPythonOcr(imageDataUrl);
+    if (!result || result.success !== true) {
+      return res.status(500).json({
+        error: result?.error || "PaddleOCR gagal membaca gambar",
+      });
+    }
+    return res.json({ text: String(result.text || "") });
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      return res.status(500).json({
+        error: "Python tidak ditemukan. Pastikan Python terpasang di server.",
+      });
+    }
+    if (String(err.message || "").includes("timeout")) {
+      return res
+        .status(504)
+        .json({
+          error: "Proses OCR timeout. Coba gunakan gambar lebih kecil.",
+        });
+    }
+    return sendServerError(res, err, "ocr-python");
   }
 });
 
