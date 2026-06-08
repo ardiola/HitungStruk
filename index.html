@@ -6056,9 +6056,7 @@
                     .json()
                     .catch(() => ({ error: "Respons OCR tidak valid" }));
                 if (!response.ok) {
-                    throw new Error(
-                        result.error || "Gagal membaca struk dengan PaddleOCR",
-                    );
+                    throw new Error(result.error || "Gagal membaca struk");
                 }
                 return String(result.text || "");
             }
@@ -6078,7 +6076,7 @@
                 }
 
                 hideLoading();
-                showLoading("Membaca struk dengan PaddleOCR...");
+                showLoading("Membaca struk...");
 
                 try {
                     const sources = [processedUrl];
