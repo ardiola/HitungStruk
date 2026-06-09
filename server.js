@@ -8,7 +8,6 @@ const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const { createClient } = require("@libsql/client");
 const crypto = require("crypto");
-const { spawn } = require("child_process");
 const util = require("util");
 const path = require("path");
 const scryptAsync = util.promisify(crypto.scrypt);
@@ -29,10 +28,6 @@ const AUTH_COOKIE_NAME = "auth_token";
 const LOGIN_LOCK_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_LOCK_THRESHOLD = 8;
 const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000;
-const OCR_PROCESS_TIMEOUT_MS = 120 * 1000;
-const OCR_MAX_BUFFER_SIZE = 8 * 1024 * 1024;
-const OCR_PYTHON_COMMAND = process.env.OCR_PYTHON_COMMAND || "python";
-const OCR_SCRIPT_PATH = path.join(__dirname, "ocr_paddle.py");
 
 const parsedAllowedOrigins = String(process.env.CORS_ALLOWED_ORIGINS || "")
   .split(",")
@@ -225,83 +220,21 @@ function sendServerError(res, err, context) {
   return res.status(500).json({ error: "Terjadi kesalahan pada server" });
 }
 
-function runPythonOcr(imageDataUrl) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(OCR_PYTHON_COMMAND, [OCR_SCRIPT_PATH], {
-      cwd: __dirname,
-      windowsHide: true,
-    });
-
-    let stdout = "";
-    let stderr = "";
-    let settled = false;
-
-    const timeout = setTimeout(() => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      child.kill();
-      reject(new Error("Proses OCR timeout"));
-    }, OCR_PROCESS_TIMEOUT_MS);
-
-    child.stdout.on("data", (chunk) => {
-      if (settled) {
-        return;
-      }
-      stdout += chunk.toString();
-      if (stdout.length > OCR_MAX_BUFFER_SIZE) {
-        settled = true;
-        clearTimeout(timeout);
-        child.kill();
-        reject(new Error("Output OCR terlalu besar"));
-      }
-    });
-
-    child.stderr.on("data", (chunk) => {
-      if (settled) {
-        return;
-      }
-      stderr += chunk.toString();
-    });
-
-    child.on("error", (err) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timeout);
-      reject(err);
-    });
-
-    child.on("close", (code) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timeout);
-      if (code !== 0) {
-        const error = new Error("Proses OCR Python gagal");
-        error.stderr = stderr;
-        error.code = code;
-        return reject(error);
-      }
-      try {
-        // Filter out non-JSON lines (like PaddleOCR download progress)
-        const jsonStart = stdout.indexOf("{");
-        const jsonStr = jsonStart >= 0 ? stdout.slice(jsonStart) : stdout;
-        const parsed = JSON.parse(jsonStr || "{}");
-        return resolve(parsed);
-      } catch (parseErr) {
-        parseErr.stderr = stderr;
-        parseErr.stdout = stdout;
-        return reject(parseErr);
-      }
-    });
-
-    child.stdin.write(JSON.stringify({ imageDataUrl }));
-    child.stdin.end();
-  });
+async function runOcrFromBuffer(imageBuffer) {
+  console.log("runOcrFromBuffer: Starting OCR...");
+  try {
+    const { runOcr } = require("./ocr.js");
+    console.log("runOcrFromBuffer: Calling runOcr...");
+    const text = await runOcr(imageBuffer);
+    console.log(
+      "runOcrFromBuffer: OCR completed, text length:",
+      text?.length || 0,
+    );
+    return { success: true, text };
+  } catch (err) {
+    console.error("runOcrFromBuffer: OCR failed:", err.message);
+    return { success: false, error: err.message };
+  }
 }
 
 function getClientIp(req) {
@@ -982,27 +915,58 @@ app.post("/api/ocr", authenticate, async (req, res) => {
   }
 
   try {
-    const result = await runPythonOcr(imageDataUrl);
+    // Extract base64 data from data URL
+    const base64Data = imageDataUrl.replace(
+      /^data:image\/[a-zA-Z0-9.+-]+;base64,/,
+      "",
+    );
+    const imageBuffer = Buffer.from(base64Data, "base64");
+
+    const result = await runOcrFromBuffer(imageBuffer);
     if (!result || result.success !== true) {
       return res.status(500).json({
-        error: result?.error || "PaddleOCR gagal membaca gambar",
+        error: result?.error || "OCR gagal membaca gambar",
       });
     }
     return res.json({ text: String(result.text || "") });
   } catch (err) {
+    console.error("OCR Route Error:", err);
+
+    const errMsg = String(err.message || "");
+
     if (err?.code === "ENOENT") {
       return res.status(500).json({
-        error: "Python tidak ditemukan. Pastikan Python terpasang di server.",
+        error:
+          "Tesseract.js tidak ditemukan. Pastikan dependency sudah terinstall.",
       });
     }
-    if (String(err.message || "").includes("timeout")) {
-      return res
-        .status(504)
-        .json({
-          error: "Proses OCR timeout. Coba gunakan gambar lebih kecil.",
-        });
+    if (errMsg.includes("timeout") || errMsg.includes("Timeout")) {
+      return res.status(504).json({
+        error:
+          "Proses OCR timeout. Coba gunakan gambar dengan resolusi lebih rendah atau format JPEG.",
+      });
     }
-    return sendServerError(res, err, "ocr-python");
+    if (errMsg.includes("WASM") || errMsg.includes("wasm")) {
+      return res.status(500).json({
+        error: "OCR gagal dimuat. Coba refresh halaman.",
+      });
+    }
+    if (errMsg.includes("worker") || errMsg.includes("Worker")) {
+      return res.status(500).json({
+        error: "OCR engine error. Coba beberapa saat lagi.",
+      });
+    }
+
+    // Log error details untuk debugging
+    console.error("OCR Error Details:", {
+      name: err.name,
+      message: err.message,
+      stack: err.stack?.substring(0, 500),
+    });
+
+    return res.status(500).json({
+      error: "Gagal membaca struk. Pastikan gambar jelas dan coba lagi.",
+    });
   }
 });
 

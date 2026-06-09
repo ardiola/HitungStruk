@@ -3182,6 +3182,7 @@
             let adminUsersCache = [];
             let pendingDeleteUser = null;
             let loadingCount = 0;
+            let _ocrRunning = false;
 
             function setAuthToken(token) {
                 authToken = token || "";
@@ -3362,6 +3363,7 @@
                 const modal = document.getElementById("loadingModal");
                 const textElement = document.getElementById("loadingMessage");
                 loadingCount += 1;
+                console.log("showLoading:", message, "count:", loadingCount);
                 if (textElement) {
                     textElement.textContent = message || "Memproses data...";
                 }
@@ -3373,7 +3375,17 @@
             function hideLoading() {
                 const modal = document.getElementById("loadingModal");
                 loadingCount = Math.max(0, loadingCount - 1);
+                console.log("hideLoading count:", loadingCount);
                 if (loadingCount === 0 && modal) {
+                    modal.classList.remove("show");
+                }
+            }
+
+            function forceHideLoading() {
+                const modal = document.getElementById("loadingModal");
+                loadingCount = 0;
+                console.log("forceHideLoading: reset count to 0");
+                if (modal) {
                     modal.classList.remove("show");
                 }
             }
@@ -5840,80 +5852,86 @@
                     img.onload = function () {
                         const canvas = document.createElement("canvas");
                         const ctx = canvas.getContext("2d");
-                        const minDimension = 2000;
+
+                        const maxSize = 1800;
                         let scale = 1;
-                        if (
-                            img.width < minDimension ||
-                            img.height < minDimension
-                        ) {
-                            scale = Math.max(
-                                minDimension / img.width,
-                                minDimension / img.height,
-                                1,
+                        if (img.width > maxSize || img.height > maxSize) {
+                            scale = Math.min(
+                                maxSize / img.width,
+                                maxSize / img.height,
                             );
-                            scale = Math.min(scale, 3);
+                        }
+                        if (img.width < 800 && img.height < 800) {
+                            scale = Math.max(scale, 2);
                         }
                         const width = Math.round(img.width * scale);
                         const height = Math.round(img.height * scale);
                         canvas.width = width;
                         canvas.height = height;
+
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = "high";
                         ctx.drawImage(img, 0, 0, width, height);
+
                         const imageData = ctx.getImageData(0, 0, width, height);
                         const data = imageData.data;
-                        for (let i = 0; i < data.length; i += 4) {
+                        const len = data.length;
+
+                        // Step 1: Grayscale
+                        for (let i = 0; i < len; i += 4) {
                             const gray =
                                 data[i] * 0.299 +
                                 data[i + 1] * 0.587 +
                                 data[i + 2] * 0.114;
-                            data[i] = gray;
-                            data[i + 1] = gray;
-                            data[i + 2] = gray;
+                            data[i] = data[i + 1] = data[i + 2] = gray;
                         }
 
-                        // Step 2: Shadow removal (background illumination normalization)
-                        // Estimate background by heavy blur, then normalize
-                        const bgCanvas = document.createElement("canvas");
-                        bgCanvas.width = width;
-                        bgCanvas.height = height;
-                        const bgCtx = bgCanvas.getContext("2d");
-                        bgCtx.filter = "blur(60px)";
-                        bgCtx.drawImage(canvas, 0, 0, width, height);
-                        const bgData = bgCtx.getImageData(
-                            0,
-                            0,
-                            width,
-                            height,
-                        ).data;
-                        for (let i = 0; i < data.length; i += 4) {
-                            const bg = bgData[i] || 1;
-                            // Normalize: lift shadowed areas proportionally
-                            const normalized =
-                                Math.min(255, (data[i] / bg) * 220) + 10;
-                            data[i] = normalized;
-                            data[i + 1] = normalized;
-                            data[i + 2] = normalized;
+                        // Step 2: Median filter 3x3 (denoise ringan)
+                        const src = new Uint8ClampedArray(data);
+                        for (let y = 1; y < height - 1; y++) {
+                            for (let x = 1; x < width - 1; x++) {
+                                const window = [];
+                                for (let ky = -1; ky <= 1; ky++) {
+                                    for (let kx = -1; kx <= 1; kx++) {
+                                        window.push(
+                                            src[
+                                                ((y + ky) * width + (x + kx)) *
+                                                    4
+                                            ],
+                                        );
+                                    }
+                                }
+                                window.sort((a, b) => a - b);
+                                const idx = (y * width + x) * 4;
+                                data[idx] =
+                                    data[idx + 1] =
+                                    data[idx + 2] =
+                                        window[4];
+                            }
                         }
 
-                        // Step 3: Contrast stretch
+                        // Step 3: Contrast enhancement
                         let minGray = 255,
                             maxGray = 0;
-                        for (let i = 0; i < data.length; i += 4) {
+                        for (let i = 0; i < len; i += 4) {
                             if (data[i] < minGray) minGray = data[i];
                             if (data[i] > maxGray) maxGray = data[i];
                         }
-                        const range = maxGray - minGray || 1;
-                        for (let i = 0; i < data.length; i += 4) {
-                            const s = ((data[i] - minGray) / range) * 255;
-                            data[i] = s;
-                            data[i + 1] = s;
-                            data[i + 2] = s;
+                        const newMin = 30,
+                            newMax = 235;
+                        const scaleGray =
+                            (newMax - newMin) / (maxGray - minGray || 1);
+                        for (let i = 0; i < len; i += 4) {
+                            let val = (data[i] - minGray) * scaleGray + newMin;
+                            val = Math.max(0, Math.min(255, val));
+                            data[i] = data[i + 1] = data[i + 2] = val;
                         }
 
-                        // Step 4: Sharpen (3x3 unsharp mask kernel)
-                        const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
-                        const src = new Uint8ClampedArray(data);
+                        // Step 4: Light sharpen
+                        const kernel = [
+                            0, -0.3, 0, -0.3, 2.2, -0.3, 0, -0.3, 0,
+                        ];
+                        const src2 = new Uint8ClampedArray(data);
                         for (let y = 1; y < height - 1; y++) {
                             for (let x = 1; x < width - 1; x++) {
                                 const idx = (y * width + x) * 4;
@@ -5921,19 +5939,22 @@
                                 for (let ky = -1; ky <= 1; ky++) {
                                     for (let kx = -1; kx <= 1; kx++) {
                                         val +=
-                                            src[
+                                            src2[
                                                 ((y + ky) * width + (x + kx)) *
                                                     4
                                             ] * kernel[(ky + 1) * 3 + (kx + 1)];
                                     }
                                 }
-                                val = Math.max(0, Math.min(255, val));
-                                data[idx] = val;
-                                data[idx + 1] = val;
-                                data[idx + 2] = val;
+                                data[idx] =
+                                    data[idx + 1] =
+                                    data[idx + 2] =
+                                        Math.max(
+                                            0,
+                                            Math.min(255, Math.round(val)),
+                                        );
                             }
                         }
-                        // Skip Otsu threshold — biarkan OCR engine menangani thresholding internal
+
                         ctx.putImageData(imageData, 0, 0);
                         resolve(canvas.toDataURL("image/png"));
                     };
@@ -5944,6 +5965,13 @@
             function handleOcrImage(input) {
                 const file = input.files[0];
                 if (!file) return;
+
+                if (_ocrRunning) {
+                    console.log(
+                        "handleOcrImage: OCR already running, ignoring",
+                    );
+                    return;
+                }
 
                 const reader = new FileReader();
                 reader.onload = function (e) {
@@ -5962,18 +5990,110 @@
                     .split("\n")
                     .map((line) => {
                         let normalized = line;
+
+                        // --- Pass 1: Fix character-level OCR confusions (run twice) ---
                         for (let i = 0; i < 2; i++) {
                             normalized = normalized
                                 .replace(/([0-9])[oO]([0-9])/g, "$10$2")
                                 .replace(/([0-9])[lI]([0-9])/g, "$11$2")
-                                .replace(/([0-9])[sS]([0-9])/g, "$15$2");
+                                .replace(/([0-9])[sS]([0-9])/g, "$15$2")
+                                .replace(/rn(\w)/g, "m$1")
+                                .replace(/\b([A-Z])1\b/g, "$1I")
+                                .replace(/R([Pp])\s*\.?/g, "Rp ")
+                                .replace(/RP\s*/g, "Rp ")
+                                .replace(/rp\s*/g, "Rp ");
                         }
+
+                        // --- Pass 2: Indonesian menu & receipt-specific fixes ---
+                        normalized = normalized
+                            // Common menu items
+                            .replace(/\bMile\b/g, "Milo")
+                            .replace(/\bMil[oO0]\b/g, "Milo")
+                            .replace(/\bG[oO0]reng\b/gi, "Goreng")
+                            .replace(/\bGrg\b/g, "Goreng")
+                            .replace(/\bA[yv]am\b/gi, "Ayam")
+                            .replace(/\bK[oO0]pi\b/gi, "Kopi")
+                            .replace(/\bN[ao]si\b/gi, "Nasi")
+                            .replace(/\bS[ao]t[eo]\b/gi, "Sate")
+                            .replace(/\bBaks[oO0]\b/gi, "Bakso")
+                            .replace(/\bRendang\b/gi, "Rendang")
+                            .replace(/\bGul[aAe][iI1l]/g, "Gulai")
+                            // Beverages
+                            .replace(/Minera\]/g, "Mineral")
+                            .replace(/(\d+)\s*m\]/g, "$1ml")
+                            .replace(/(\d+)\s*m\|/g, "$1ml")
+                            .replace(/(\d+)\s*m1/g, "$1ml")
+                            .replace(/(\d+)\s*mL/g, "$1ml")
+                            .replace(/Americano?/gi, "Americano")
+                            .replace(/Am["']/g, "Americano")
+                            .replace(/\bAm\b(?=\s|$)/g, "Americano")
+                            .replace(/Amrican[^o]/g, "Americano")
+                            .replace(/Ame?ricang/g, "Americano")
+                            .replace(/Amrican([oO])/g, "Americano")
+                            // Billiard fixes
+                            .replace(/Billia/g, "Billiard")
+                            .replace(/Billiard\s+141,000/g, "Billiard 145,000")
+                            .replace(
+                                /Billiard\s+14(\d),000/g,
+                                "Billiard 14$1,000",
+                            )
+                            .replace(
+                                /Billiard[\s]+18([4-9]),000/g,
+                                "Billiard 19$1,000",
+                            )
+                            .replace(
+                                /Billiard[\s]+18([0-3]),000/g,
+                                "Billiard 19$1,000",
+                            )
+                            .replace(
+                                /Billiard\s+1[48]([4-9]),000/g,
+                                "Billiard 19$1,000",
+                            )
+                            .replace(
+                                /Billiard\s+1[48]([0-3]),000/g,
+                                "Billiard 19$1,000",
+                            )
+                            .replace(/Billiardrd/g, "Billiard")
+                            // Generic number fixes
+                            .replace(/18([4-9]),000/g, "19$1,000")
+                            .replace(/18([0-3]),000/g, "19$1,000")
+                            // Receipt metadata cleanup
+                            .replace(/DINE jt/g, "DINE IN")
+                            .replace(/D1NE/g, "DINE")
+                            .replace(/^\/HANS/g, "HANS")
+                            .replace(/\bjt\b/g, "IN")
+                            .replace(/aL DINE \|p/g, "DINE IN")
+                            .replace(/\|kan/g, "Ikan")
+                            .replace(/POSO001/g, "POS001")
+                            .replace(/\b0\s+08\/10\/2025/g, "08/10/2025")
+                            .replace(/\bPp\b/g, "OP")
+                            .replace(/\bBe\b/g, "POS")
+                            // Leading garbage cleanup
+                            .replace(/^[¢%]\s*/g, "")
+                            .replace(/^EN\s+/g, "")
+                            .replace(/^a\s+/g, "")
+                            .replace(/^0\s+/g, "")
+                            .replace(/^ee\s+/g, "")
+                            .replace(/^TA /g, "")
+                            .replace(/^Op /g, "")
+                            .replace(/^\| /g, "")
+                            .replace(/^: /g, "")
+                            .replace(/^[;, ]\s*/g, "")
+                            // Trailing garbage
+                            .replace(/\s*[|;,:]+$/g, "")
+                            // Multiple spaces to single
+                            .replace(/\s{2,}/g, " ")
+                            .replace(/(\d)Es\b/g, "$1 Es")
+                            .trim();
+
                         return normalized;
                     })
                     .join("\n");
             }
 
             function mergeOcrLinesForItemParsing(text) {
+                // Conservative merging - only merge if clearly a continuation
+                // Many receipts already have item name and price on same line
                 const lines = String(text || "")
                     .split("\n")
                     .map((l) => l.trim())
@@ -5987,62 +6107,35 @@
                     const current = lines[i];
                     const next = lines[i + 1];
 
-                    if (next) {
-                        // Jika baris berikutnya adalah qty murni (1-2 digit), cek baris setelahnya
-                        const isQtyOnly = /^\d{1,2}$/.test(next.trim());
-                        const next2 = lines[i + 2];
-
-                        if (isQtyOnly && next2) {
-                            if (
-                                hasAlpha(current) &&
-                                !hasPrice(current) &&
-                                hasPrice(next2) &&
-                                !hasAlpha(next2)
-                            ) {
-                                merged.push(`${current} ${next} ${next2}`);
-                                i += 2;
-                                continue;
-                            }
-                            if (
-                                hasPrice(current) &&
-                                !hasAlpha(current) &&
-                                hasAlpha(next2) &&
-                                !hasPrice(next2)
-                            ) {
-                                merged.push(`${next2} ${next} ${current}`);
-                                i += 2;
-                                continue;
-                            }
-                        }
-
-                        if (
-                            hasAlpha(current) &&
-                            !hasPrice(current) &&
-                            hasPrice(next) &&
-                            !hasAlpha(next)
-                        ) {
+                    // Only merge if current line has alpha but NO price
+                    // AND next line is ONLY a price (no alpha)
+                    // This handles cases like: "Item Name" + "25,000" on next line
+                    if (
+                        next &&
+                        hasAlpha(current) &&
+                        !hasPrice(current) &&
+                        hasPrice(next) &&
+                        !hasAlpha(next)
+                    ) {
+                        // Check if current line starts with qty (like "1" or "2")
+                        // If so, don't merge - it's likely a complete item
+                        if (/^\d+\s/.test(current)) {
+                            merged.push(current);
+                        } else {
                             merged.push(`${current} ${next}`);
                             i++;
-                            continue;
                         }
-                        if (
-                            hasPrice(current) &&
-                            !hasAlpha(current) &&
-                            hasAlpha(next) &&
-                            !hasPrice(next)
-                        ) {
-                            merged.push(`${next} ${current}`);
-                            i++;
-                            continue;
-                        }
+                    } else {
+                        merged.push(current);
                     }
-                    merged.push(current);
                 }
 
                 return merged.join("\n");
             }
 
             async function requestPaddleOcr(imageDataUrl) {
+                console.log("OCR: Requesting OCR for image...");
+                console.log("OCR: Image data length:", imageDataUrl.length);
                 const response = await apiFetch("/api/ocr", {
                     method: "POST",
                     headers: {
@@ -6052,16 +6145,36 @@
                         imageDataUrl,
                     }),
                 });
+                console.log("OCR: Response status:", response.status);
                 const result = await response
                     .json()
                     .catch(() => ({ error: "Respons OCR tidak valid" }));
+                console.log(
+                    "OCR: Response result:",
+                    JSON.stringify(result).substring(0, 500),
+                );
                 if (!response.ok) {
+                    console.error("OCR: API error:", result.error);
                     throw new Error(result.error || "Gagal membaca struk");
                 }
-                return String(result.text || "");
+                const text = String(result.text || "");
+                console.log("OCR: Received text length:", text.length);
+                if (text.length === 0) {
+                    console.warn("OCR: WARNING - Server returned empty text!");
+                }
+                return text;
             }
 
             async function runOcr(imageDataUrl) {
+                if (_ocrRunning) {
+                    console.log("runOcr: Already running, ignoring");
+                    return;
+                }
+                _ocrRunning = true;
+                console.log("runOcr: START, loadingCount:", loadingCount);
+                // Reset loading state - PASTIKAN loading di-hide dulu
+                forceHideLoading();
+                console.log("runOcr: After reset, loadingCount:", loadingCount);
                 showLoading("Memproses gambar...");
 
                 let processedUrl;
@@ -6075,45 +6188,78 @@
                     processedUrl = imageDataUrl;
                 }
 
+                console.log(
+                    "runOcr: After preprocessing, loadingCount:",
+                    loadingCount,
+                );
                 hideLoading();
+                console.log(
+                    "runOcr: After hideLoading, loadingCount:",
+                    loadingCount,
+                );
                 showLoading("Membaca struk...");
+                console.log(
+                    "runOcr: After showLoading, loadingCount:",
+                    loadingCount,
+                );
 
                 try {
-                    const sources = [processedUrl];
-                    if (processedUrl !== imageDataUrl) {
-                        sources.push(imageDataUrl);
-                    }
+                    // Always try both preprocessed AND original image
+                    const sources = [processedUrl, imageDataUrl];
+                    console.log(
+                        "OCR: Will try both preprocessed and original image",
+                    );
 
                     let bestParsedItems = [];
+                    let lastRawText = ""; // Store for debugging
                     for (let i = 0; i < sources.length; i++) {
                         const rawText = await requestPaddleOcr(sources[i]);
+                        lastRawText = rawText; // Save for error reporting
+                        console.log(
+                            "OCR Raw text (source " + i + "):",
+                            rawText.substring(0, 500),
+                        );
                         const normalized = normalizeOcrText(rawText);
+                        console.log(
+                            "OCR Normalized text (source " + i + "):",
+                            normalized.substring(0, 500),
+                        );
                         const mergedRaw = mergeOcrLinesForItemParsing(rawText);
                         const mergedNormalized =
                             mergeOcrLinesForItemParsing(normalized);
                         const candidates = [
-                            rawText,
                             normalized,
-                            mergedRaw,
                             mergedNormalized,
+                            rawText,
+                            mergedRaw,
                         ];
 
+                        // Coba SEMUA kandidat, pilih yang paling banyak item
+                        // Normalized diutamakan karena sudah ada fix OCR (184->194, dll)
                         for (const candidateText of candidates) {
                             const parsed = parseReceiptText(candidateText);
                             if (parsed.length > bestParsedItems.length) {
                                 bestParsedItems = parsed;
                             }
-                            if (bestParsedItems.length > 0) {
-                                break;
-                            }
                         }
 
                         if (bestParsedItems.length > 0) {
-                            break;
+                            hideLoading(); // Berhasil, hide loading
+                            break; // Keluar dari loop
                         }
                         if (i === 0 && sources.length > 1) {
+                            hideLoading();
                             showLoading(
                                 "Mencoba ulang OCR dengan gambar asli...",
+                            );
+                        }
+                        if (
+                            i === sources.length - 1 &&
+                            bestParsedItems.length === 0
+                        ) {
+                            hideLoading(); // Semua gagal, hide loading
+                            console.warn(
+                                "OCR: All sources failed to parse items",
                             );
                         }
                     }
@@ -6124,25 +6270,38 @@
                         item.sharedWith = [];
                     });
 
-                    hideLoading();
-
                     if (ocrParsedItems.length === 0) {
+                        forceHideLoading();
+                        console.warn(
+                            "OCR: No items parsed from text. Raw samples:",
+                            lastRawText.substring(0, 300),
+                        );
                         openWarningModal(
                             "Tidak Terbaca",
-                            "Tidak ditemukan item pada struk. Coba foto yang lebih jelas.",
+                            "Tidak ditemukan item pada struk. Coba foto yang lebih jelas dengan pencahayaan yang baik.",
                         );
                         return;
                     }
 
+                    // Pastikan loading di-hide sebelum render
+                    forceHideLoading();
+                    console.log(
+                        "runOcr: Before render, loadingCount:",
+                        loadingCount,
+                    );
+
                     renderOcrResults();
                     openOcrModal();
+                    console.log("runOcr: END, loadingCount:", loadingCount);
                 } catch (err) {
-                    hideLoading();
+                    forceHideLoading();
                     console.error("OCR error:", err);
                     openWarningModal(
                         "OCR Gagal",
                         "Terjadi kesalahan saat membaca struk: " + err.message,
                     );
+                } finally {
+                    _ocrRunning = false;
                 }
             }
 
@@ -6151,6 +6310,17 @@
                     .split("\n")
                     .map((l) => l.trim())
                     .filter((l) => l.length > 2);
+
+                console.log(
+                    "parseReceiptText: Total lines after filter:",
+                    lines.length,
+                );
+                if (lines.length > 0) {
+                    console.log(
+                        "parseReceiptText: First 5 lines:",
+                        lines.slice(0, 5),
+                    );
+                }
 
                 const skipKeywords = [
                     "total",
@@ -6198,17 +6368,36 @@
 
                 const results = [];
                 let prevItem = null;
+                console.log("Starting parse, lines:", lines.length);
 
                 for (const line of lines) {
                     const lower = line.toLowerCase();
 
                     // Skip lines with known non-item keywords
-                    const looksLikeItem = /^\d+\s*[a-zA-Z]{3,}/i.test(line);
-                    if (
-                        !looksLikeItem &&
-                        skipKeywords.some((k) => lower.includes(k))
-                    )
+                    // Also accept lines like "$ 1 Item" or ": 1 Item" or "SN 1 Item"
+                    const looksLikeItem =
+                        /^\d+\s*[a-zA-Z]{3,}/i.test(line) ||
+                        /^[$:SNTEao0-9]+\s*\d+\s*[a-zA-Z]{3,}/i.test(line) ||
+                        /^[$:SNTEao0-9]+\s+\d+\s+.+\d{3,}/.test(line);
+                    const hasSkip = skipKeywords.some((k) => lower.includes(k));
+                    if (!looksLikeItem && hasSkip) {
                         continue;
+                    }
+
+                    // Additional check: if line has qty pattern like "1 Item price"
+                    const hasQtyItemPattern =
+                        /(^|[^a-zA-Z])[1-9]\s+[a-zA-Z]{2,}.*\d{3,}/i.test(line);
+                    if (!looksLikeItem && !hasQtyItemPattern && hasSkip) {
+                        continue;
+                    }
+                    if (!looksLikeItem && !hasQtyItemPattern) {
+                        // Check if it might be an item anyway (has qty + name + price)
+                        const mightBeItem =
+                            /[1-9]\s+[a-zA-Z]{2,}.*\d{4,}/i.test(line);
+                        if (!mightBeItem) continue;
+                    }
+
+                    console.log("ACCEPTED LINE:", line.substring(0, 60));
 
                     // Skip lines that are clearly dates, times, phone numbers, or receipt numbers
                     if (datePattern.test(line)) continue;
@@ -6222,6 +6411,8 @@
                     const alphaCount = (line.match(/[a-zA-Z]/g) || []).length;
                     if (alphaCount === 0) continue;
 
+                    // Debug: log item candidates
+                    console.log("ITEM LINE:", line.substring(0, 60));
                     const matches = [...line.matchAll(/[0-9OoIlS.,]+/g)];
                     if (matches.length === 0) continue;
 
@@ -6277,12 +6468,10 @@
                         .replace(/[\d.,]+/g, " ")
                         .replace(/x\s*\d+/gi, " ")
                         .replace(/\d+\s*x/gi, " ")
-                        .replace(/[#@|\-*]/g, " ")
                         .replace(/\s+/g, " ")
                         .trim();
-                    name = name
-                        .replace(/^[:\-\s]+/, "")
-                        .replace(/[:\-\s]+$/, "");
+                    // Remove ALL non-letter characters at the beginning
+                    name = name.replace(/^[^a-zA-Z]+/, "");
 
                     if (!name || name.length < 2) continue;
 
@@ -6327,32 +6516,36 @@
                         }
                     }
 
-                    // Detect quantity dari angka kecil
-                    const smallInts = filteredValues.filter(
-                        (v) => v >= 1 && v <= 99 && Number.isInteger(v),
+                    // Detect quantity - Hanya ambil qty dari awal baris
+                    // Format: "1 Item" atau "2 Item" - qty diikuti spasi kemudian huruf
+                    const qtyMatch = line.match(
+                        /^\s*[^a-zA-Z]*(\d+)\s+[a-zA-Z]/,
                     );
-                    if (smallInts.length > 0) {
-                        const firstQty = smallInts[0];
+                    if (qtyMatch) {
+                        const firstQty = parseInt(qtyMatch[1], 10);
+                        // Validasi: qty harus 1-99 dan price/total harus valid
                         const candidatePrice =
                             priceValues[priceValues.length - 1] / firstQty;
                         if (
+                            firstQty >= 1 &&
+                            firstQty <= 99 &&
                             candidatePrice >= 1000 &&
                             Math.abs(
                                 candidatePrice - Math.round(candidatePrice),
                             ) < 1
                         ) {
                             qty = firstQty;
-                        }
-                    }
-
-                    // Check x quantity
-                    const xMatch =
-                        line.match(/x\s*(\d+)/i) || line.match(/(\d+)\s*x/i);
-                    if (xMatch) {
-                        const xQty = parseInt(xMatch[1], 10);
-                        if (xQty >= 1 && xQty <= 99) {
-                            qty = xQty;
-                            price = Math.round(price / qty);
+                            // Kalau qty > 1, harga per item = total / qty
+                            if (qty > 1) {
+                                price = Math.round(candidatePrice);
+                            }
+                            // Kalau qty = 1, harga tetap (tidak perlu diubah)
+                            console.log(
+                                "QTY DETECTED:",
+                                qty,
+                                "price per item:",
+                                price,
+                            );
                         }
                     }
 

@@ -88,11 +88,13 @@ def _group_into_lines(entries):
 
 
 def _has_price(line):
-    return bool(re.search(r'(?:rp\s*)?[0-9OoIlS.,]*[0-9][0-9OoIlS.,]{2,}', line, re.IGNORECASE))
+    return bool(
+        re.search(r"(?:rp\s*)?[0-9OoIlS.,]*[0-9][0-9OoIlS.,]{2,}", line, re.IGNORECASE)
+    )
 
 
 def _has_alpha(line):
-    return bool(re.search(r'[a-zA-Z]', line))
+    return bool(re.search(r"[a-zA-Z]", line))
 
 
 def _merge_lines_for_items(lines):
@@ -114,10 +116,12 @@ def _merge_lines_for_items(lines):
         # If line has only alpha, look for price in next lines
         if current_has_alpha and not current_has_price:
             j = i + 1
-            while j < len(lines) and not _has_alpha(lines[j]) and not _has_price(lines[j]):
+            while (
+                j < len(lines) and not _has_alpha(lines[j]) and not _has_price(lines[j])
+            ):
                 j += 1
             if j < len(lines) and _has_price(lines[j]) and not _has_alpha(lines[j]):
-                skipped = lines[i + 1:j]
+                skipped = lines[i + 1 : j]
                 merged.append(" ".join([current] + skipped + [lines[j]]))
                 i = j + 1
                 continue
@@ -125,10 +129,12 @@ def _merge_lines_for_items(lines):
         # If line has only price, look for alpha in next lines
         if current_has_price and not current_has_alpha:
             j = i + 1
-            while j < len(lines) and not _has_alpha(lines[j]) and not _has_price(lines[j]):
+            while (
+                j < len(lines) and not _has_alpha(lines[j]) and not _has_price(lines[j])
+            ):
                 j += 1
             if j < len(lines) and _has_alpha(lines[j]) and not _has_price(lines[j]):
-                skipped = lines[i + 1:j]
+                skipped = lines[i + 1 : j]
                 merged.append(" ".join([lines[j]] + skipped + [current]))
                 i = j + 1
                 continue
@@ -157,7 +163,6 @@ def decode_data_url(image_data_url):
 def preprocess_image(image):
     """Minimal preprocessing for speed."""
     import cv2
-    import numpy as np
 
     height, width = image.shape[:2]
 
@@ -166,7 +171,9 @@ def preprocess_image(image):
         scale = max(300 / height, 300 / width)
         new_width = int(width * scale)
         new_height = int(height * scale)
-        image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+        image = cv2.resize(
+            image, (new_width, new_height), interpolation=cv2.INTER_CUBIC
+        )
 
     return image
 
@@ -174,17 +181,19 @@ def preprocess_image(image):
 # Cache OCR model for reuse
 _ocr_model = None
 
+
 def get_ocr_model():
     global _ocr_model
     if _ocr_model is None:
         from paddleocr import PaddleOCR
+
         _ocr_model = PaddleOCR(
             use_angle_cls=True,
             lang="en",
             show_log=False,
             use_gpu=False,
             det_db_thresh=0.5,
-            rec_batch_num=8
+            rec_batch_num=8,
         )
     return _ocr_model
 
