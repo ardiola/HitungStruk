@@ -1344,18 +1344,18 @@
                 }
 
                 .ocr-result-item {
-                    flex-wrap: wrap;
-                    gap: 8px;
+                    flex-wrap: nowrap;
+                    gap: 10px;
                 }
 
                 .ocr-result-item label {
-                    width: calc(100% - 36px);
+                    flex: 1;
                 }
 
                 .ocr-result-item .ocr-price {
-                    margin-left: 28px;
-                    width: 100%;
+                    white-space: nowrap;
                     color: #64748b;
+                    flex-shrink: 0;
                 }
 
                 .ocr-split-select {
@@ -1432,8 +1432,8 @@
                 }
 
                 .ocr-result-item {
-                    flex-wrap: wrap;
-                    gap: 8px;
+                    flex-wrap: nowrap;
+                    gap: 10px;
                     align-items: flex-start;
                 }
 
@@ -1454,11 +1454,10 @@
 
                 .ocr-result-item .ocr-price {
                     font-size: 14px;
-                    width: 100%;
-                    text-align: right;
-                    padding-right: 4px;
+                    white-space: nowrap;
                     color: #555;
                     font-weight: 500;
+                    flex-shrink: 0;
                 }
 
                 .ocr-split-row {
@@ -1523,32 +1522,68 @@
                 }
 
                 .ocr-edit-item-fields {
+                    display: flex;
                     flex-direction: column;
-                    gap: 12px;
+                    gap: 10px;
                 }
 
-                .ocr-edit-item-fields .ocr-edit-name,
-                .ocr-edit-item-fields .ocr-edit-price {
-                    width: 100%;
-                    padding: 14px;
-                    font-size: 15px;
-                    border-radius: 10px;
-                    border: 1px solid #e2e8f0;
-                    box-sizing: border-box;
+                .ocr-edit-item-fields .ocr-edit-name-row {
+                    display: flex;
+                    flex-direction: row;
+                    gap: 8px;
+                    align-items: center;
                 }
 
-                .ocr-edit-item-fields .ocr-edit-price {
-                    text-align: left;
+                .ocr-edit-item-fields .ocr-edit-qty-wrap {
+                    display: flex;
+                    align-items: center;
+                    gap: 2px;
+                    flex-shrink: 0;
                 }
 
                 .ocr-edit-item-fields .ocr-edit-qty {
+                    width: 28px;
                     font-size: 15px;
                     text-align: center;
-                    padding: 14px;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 10px;
-                    width: 100%;
+                    padding: 4px 2px;
+                    border: none;
+                    background: transparent;
                     box-sizing: border-box;
+                    color: #1a1a2e;
+                    font-weight: 500;
+                }
+
+                .ocr-edit-item-fields .ocr-edit-qty-x {
+                    font-size: 15px;
+                    color: #1a1a2e;
+                    font-weight: 500;
+                }
+
+                .ocr-edit-item-fields .ocr-edit-name {
+                    flex: 1;
+                    padding: 12px 14px;
+                    font-size: 15px;
+                    border-radius: 12px;
+                    border: 1px solid #e2e8f0;
+                    box-sizing: border-box;
+                    background: #f8f9fa;
+                }
+
+                .ocr-edit-item-fields .ocr-edit-price-row {
+                    display: flex;
+                    justify-content: flex-end;
+                    padding-left: 48px;
+                }
+
+                .ocr-edit-item-fields .ocr-edit-price {
+                    padding: 10px 14px;
+                    font-size: 15px;
+                    border-radius: 12px;
+                    border: 1px solid #e2e8f0;
+                    box-sizing: border-box;
+                    text-align: right;
+                    width: 150px;
+                    background: #f8f9fa;
                 }
 
                 #ocrEditModal .modal-actions {
@@ -2085,6 +2120,31 @@
                 gap: 12px;
                 align-items: center;
             }
+            .ocr-edit-item-fields .ocr-edit-name-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+            }
+            .ocr-edit-item-fields .ocr-edit-qty-wrap {
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                flex-shrink: 0;
+            }
+            .ocr-edit-item-fields .ocr-edit-qty {
+                width: 32px;
+                font-size: 14px;
+                text-align: center;
+                padding: 4px 2px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                box-sizing: border-box;
+            }
+            .ocr-edit-item-fields .ocr-edit-qty-x {
+                font-size: 14px;
+                color: #666;
+            }
             .ocr-edit-item-fields .ocr-edit-name {
                 flex: 1;
                 padding: 8px 12px;
@@ -2096,6 +2156,10 @@
             .ocr-edit-item-fields .ocr-edit-name:focus {
                 border-color: #2563eb;
                 outline: none;
+            }
+            .ocr-edit-item-fields .ocr-edit-price-row {
+                display: flex;
+                align-items: center;
             }
             .ocr-edit-item-fields .ocr-edit-price {
                 width: 120px;
@@ -2267,10 +2331,10 @@
             }
             .scan-choice-btn {
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 gap: 16px;
                 width: 100%;
-                padding: 16px;
+                padding: 12px 16px;
                 border: 2px solid #e8e8e8;
                 border-radius: 16px;
                 background: #fff;
@@ -2308,7 +2372,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 24px;
+                font-size: 22px;
                 flex-shrink: 0;
             }
             .camera-btn .scan-choice-icon {
@@ -2319,6 +2383,9 @@
             }
             .scan-choice-btn-text {
                 flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
             }
             .scan-choice-btn-title {
                 display: block;
@@ -6887,14 +6954,34 @@
                         (item, idx) => `
                     <div class="ocr-edit-item-row">
                         <div class="ocr-edit-item-fields">
-                            <input type="text" class="ocr-edit-name" id="editName_${idx}" value="${escapeHtml(item.name)}" placeholder="Nama Item">
-                            <input type="number" class="ocr-edit-price" id="editPrice_${idx}" value="${item.price}" placeholder="Harga">
-                            <span class="ocr-edit-qty">x${item.quantity}</span>
+                            <div class="ocr-edit-name-row">
+                                <div class="ocr-edit-qty-wrap">
+                                    <input type="number" class="ocr-edit-qty" id="editQty_${idx}" value="${item.quantity}" min="1">
+                                    <span class="ocr-edit-qty-x">X</span>
+                                </div>
+                                <input type="text" class="ocr-edit-name" id="editName_${idx}" value="${escapeHtml(item.name)}" placeholder="Nama Item">
+                            </div>
+                            <div class="ocr-edit-price-row">
+                                <input type="text" class="ocr-edit-price" id="editPrice_${idx}" value="${item.price.toLocaleString("id-ID")}" placeholder="Harga" onclick="priceEditFocus(this)" onblur="priceEditBlur(this)">
+                            </div>
                         </div>
                     </div>
                 `,
                     )
                     .join("");
+            }
+
+            function priceEditFocus(el) {
+                const raw = el.value.replace(/[^\d]/g, "");
+                el.value = raw;
+            }
+
+            function priceEditBlur(el) {
+                const raw = el.value.replace(/[^\d]/g, "");
+                const num = parseInt(raw, 10);
+                if (!isNaN(num) && num >= 0) {
+                    el.value = num.toLocaleString("id-ID");
+                }
             }
 
             function openOcrEditModal() {
@@ -6922,13 +7009,21 @@
                     const priceInput = document.getElementById(
                         `editPrice_${idx}`,
                     );
+                    const qtyInput = document.getElementById(`editQty_${idx}`);
                     if (nameInput && nameInput.value.trim()) {
                         item.name = nameInput.value.trim();
                     }
                     if (priceInput) {
-                        const parsed = parseInt(priceInput.value, 10);
+                        const rawValue = priceInput.value.replace(/[^\d]/g, "");
+                        const parsed = parseInt(rawValue, 10);
                         if (!isNaN(parsed) && parsed >= 0) {
                             item.price = parsed;
+                        }
+                    }
+                    if (qtyInput) {
+                        const parsed = parseInt(qtyInput.value, 10);
+                        if (!isNaN(parsed) && parsed > 0) {
+                            item.quantity = parsed;
                         }
                     }
                 });
@@ -6983,6 +7078,7 @@
             }
 
             function openOcrModal() {
+                const scrollY = window.scrollY;
                 const modal = document.getElementById("ocrModal");
                 const previewContainer =
                     document.getElementById("ocrImagePreview");
@@ -6997,7 +7093,12 @@
                     previewContainer.style.display = "none";
                 }
 
-                if (modal) modal.classList.add("show");
+                if (modal) {
+                    modal.classList.add("show");
+                    requestAnimationFrame(() => {
+                        window.scrollTo(0, scrollY);
+                    });
+                }
             }
 
             function closeOcrModal() {
