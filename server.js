@@ -23,7 +23,6 @@ const MAX_PERSON_NAME_LENGTH = 80;
 const MAX_REKENING_LENGTH = 30;
 const MAX_SPLIT_COUNT = 100;
 const MAX_PERSON_BILLS = 200;
-const MAX_OCR_IMAGE_DATA_URL_LENGTH = 10 * 1024 * 1024;
 const AUTH_COOKIE_NAME = "auth_token";
 const LOGIN_LOCK_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_LOCK_THRESHOLD = 8;
@@ -218,23 +217,6 @@ function sendServerError(res, err, context) {
     console.error(err);
   }
   return res.status(500).json({ error: "Terjadi kesalahan pada server" });
-}
-
-async function runOcrFromBuffer(imageBuffer) {
-  console.log("runOcrFromBuffer: Starting OCR...");
-  try {
-    const { runOcr } = require("./ocr.js");
-    console.log("runOcrFromBuffer: Calling runOcr...");
-    const text = await runOcr(imageBuffer);
-    console.log(
-      "runOcrFromBuffer: OCR completed, text length:",
-      text?.length || 0,
-    );
-    return { success: true, text };
-  } catch (err) {
-    console.error("runOcrFromBuffer: OCR failed:", err.message);
-    return { success: false, error: err.message };
-  }
 }
 
 function getClientIp(req) {
@@ -899,74 +881,6 @@ app.get("/api/bills/:id", authenticate, async (req, res) => {
     res.json(bill);
   } catch (err) {
     sendServerError(res, err, "bills-detail");
-  }
-});
-
-app.post("/api/ocr", authenticate, async (req, res) => {
-  const imageDataUrl = String(req.body?.imageDataUrl || "");
-  if (!imageDataUrl) {
-    return res.status(400).json({ error: "imageDataUrl wajib diisi" });
-  }
-  if (!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(imageDataUrl)) {
-    return res.status(400).json({ error: "Format gambar tidak valid" });
-  }
-  if (imageDataUrl.length > MAX_OCR_IMAGE_DATA_URL_LENGTH) {
-    return res.status(413).json({ error: "Ukuran gambar terlalu besar" });
-  }
-
-  try {
-    // Extract base64 data from data URL
-    const base64Data = imageDataUrl.replace(
-      /^data:image\/[a-zA-Z0-9.+-]+;base64,/,
-      "",
-    );
-    const imageBuffer = Buffer.from(base64Data, "base64");
-
-    const result = await runOcrFromBuffer(imageBuffer);
-    if (!result || result.success !== true) {
-      return res.status(500).json({
-        error: result?.error || "OCR gagal membaca gambar",
-      });
-    }
-    return res.json({ text: String(result.text || "") });
-  } catch (err) {
-    console.error("OCR Route Error:", err);
-
-    const errMsg = String(err.message || "");
-
-    if (err?.code === "ENOENT") {
-      return res.status(500).json({
-        error:
-          "Tesseract.js tidak ditemukan. Pastikan dependency sudah terinstall.",
-      });
-    }
-    if (errMsg.includes("timeout") || errMsg.includes("Timeout")) {
-      return res.status(504).json({
-        error:
-          "Proses OCR timeout. Coba gunakan gambar dengan resolusi lebih rendah atau format JPEG.",
-      });
-    }
-    if (errMsg.includes("WASM") || errMsg.includes("wasm")) {
-      return res.status(500).json({
-        error: "OCR gagal dimuat. Coba refresh halaman.",
-      });
-    }
-    if (errMsg.includes("worker") || errMsg.includes("Worker")) {
-      return res.status(500).json({
-        error: "OCR engine error. Coba beberapa saat lagi.",
-      });
-    }
-
-    // Log error details untuk debugging
-    console.error("OCR Error Details:", {
-      name: err.name,
-      message: err.message,
-      stack: err.stack?.substring(0, 500),
-    });
-
-    return res.status(500).json({
-      error: "Gagal membaca struk. Pastikan gambar jelas dan coba lagi.",
-    });
   }
 });
 

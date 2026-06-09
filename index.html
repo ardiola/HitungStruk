@@ -2421,6 +2421,7 @@
                 display: none;
             }
         </style>
+        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     </head>
     <body>
         <div id="loginOverlay" class="login-overlay">
@@ -6452,36 +6453,40 @@
                 return merged.join("\n");
             }
 
-            async function requestPaddleOcr(imageDataUrl) {
-                console.log("OCR: Requesting OCR for image...");
+            async function runTesseractOcr(imageDataUrl) {
+                console.log("OCR: Running Tesseract.js in browser...");
                 console.log("OCR: Image data length:", imageDataUrl.length);
-                const response = await apiFetch("/api/ocr", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
+
+                try {
+                    // Tesseract.js v5 API
+                    const result = await Tesseract.recognize(
                         imageDataUrl,
-                    }),
-                });
-                console.log("OCR: Response status:", response.status);
-                const result = await response
-                    .json()
-                    .catch(() => ({ error: "Respons OCR tidak valid" }));
-                console.log(
-                    "OCR: Response result:",
-                    JSON.stringify(result).substring(0, 500),
-                );
-                if (!response.ok) {
-                    console.error("OCR: API error:", result.error);
-                    throw new Error(result.error || "Gagal membaca struk");
+                        "eng",
+                        {
+                            logger: (m) => {
+                                if (m.status === "recognizing text") {
+                                    console.log(
+                                        "OCR Progress:",
+                                        Math.round(m.progress * 100) + "%",
+                                    );
+                                }
+                            },
+                        },
+                    );
+
+                    const text = result?.data?.text || "";
+                    console.log(
+                        "OCR: Tesseract completed, text length:",
+                        text.length,
+                    );
+                    return text;
+                } catch (err) {
+                    console.error("OCR: Tesseract error:", err);
+                    throw new Error(
+                        "Gagal membaca struk: " +
+                            (err.message || "Unknown error"),
+                    );
                 }
-                const text = String(result.text || "");
-                console.log("OCR: Received text length:", text.length);
-                if (text.length === 0) {
-                    console.warn("OCR: WARNING - Server returned empty text!");
-                }
-                return text;
             }
 
             async function runOcr(imageDataUrl) {
@@ -6532,7 +6537,7 @@
                     let bestParsedItems = [];
                     let lastRawText = ""; // Store for debugging
                     for (let i = 0; i < sources.length; i++) {
-                        const rawText = await requestPaddleOcr(sources[i]);
+                        const rawText = await runTesseractOcr(sources[i]);
                         lastRawText = rawText; // Save for error reporting
                         console.log(
                             "OCR Raw text (source " + i + "):",
