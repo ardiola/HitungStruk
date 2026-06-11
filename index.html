@@ -6163,6 +6163,208 @@
                 }
             }
 
+            // ========== STREAMLINED OCR ENGINE ==========
+            class AdvancedOCREngine {
+                async preprocess(imageDataUrl, variant = "standard") {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            const ctx = canvas.getContext("2d");
+                            const maxSize = 2000;
+
+                            let scale = 1;
+                            if (img.width > maxSize || img.height > maxSize) {
+                                scale = Math.min(
+                                    maxSize / img.width,
+                                    maxSize / img.height,
+                                );
+                            }
+                            if (img.width < 800) scale = Math.max(scale, 2);
+                            if (variant === "upscale2x")
+                                scale = Math.max(scale, 2.5);
+
+                            const width = Math.round(img.width * scale);
+                            const height = Math.round(img.height * scale);
+                            canvas.width = width;
+                            canvas.height = height;
+
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = "high";
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            const imageData = ctx.getImageData(
+                                0,
+                                0,
+                                width,
+                                height,
+                            );
+                            const data = imageData.data;
+                            const len = data.length;
+
+                            // Grayscale
+                            for (let i = 0; i < len; i += 4) {
+                                const gray =
+                                    data[i] * 0.299 +
+                                    data[i + 1] * 0.587 +
+                                    data[i + 2] * 0.114;
+                                data[i] = data[i + 1] = data[i + 2] = gray;
+                            }
+
+                            if (variant !== "binarized") {
+                                // Contrast + Sharpen
+                                let min = 255,
+                                    max = 0;
+                                for (let i = 0; i < len; i += 4) {
+                                    if (data[i] < min) min = data[i];
+                                    if (data[i] > max) max = data[i];
+                                }
+                                const newMin =
+                                    variant === "upscale2x" ? 20 : 30;
+                                const newMax =
+                                    variant === "upscale2x" ? 245 : 235;
+                                const scaleGray =
+                                    (newMax - newMin) / (max - min || 1);
+                                for (let i = 0; i < len; i += 4) {
+                                    let val =
+                                        (data[i] - min) * scaleGray + newMin;
+                                    data[i] =
+                                        data[i + 1] =
+                                        data[i + 2] =
+                                            Math.max(0, Math.min(255, val));
+                                }
+
+                                const sigma =
+                                    variant === "upscale2x" ? 1.5 : 1.0;
+                                const kernel = [
+                                    0,
+                                    -0.3 * sigma,
+                                    0,
+                                    -0.3 * sigma,
+                                    2.2 + 0.4 * sigma,
+                                    -0.3 * sigma,
+                                    0,
+                                    -0.3 * sigma,
+                                    0,
+                                ];
+                                const src = new Uint8ClampedArray(data);
+                                for (let y = 1; y < height - 1; y++) {
+                                    for (let x = 1; x < width - 1; x++) {
+                                        let val = 0;
+                                        for (let ky = -1; ky <= 1; ky++) {
+                                            for (let kx = -1; kx <= 1; kx++) {
+                                                val +=
+                                                    src[
+                                                        ((y + ky) * width +
+                                                            (x + kx)) *
+                                                            4
+                                                    ] *
+                                                    kernel[
+                                                        (ky + 1) * 3 + (kx + 1)
+                                                    ];
+                                            }
+                                        }
+                                        const idx = (y * width + x) * 4;
+                                        data[idx] =
+                                            data[idx + 1] =
+                                            data[idx + 2] =
+                                                Math.max(
+                                                    0,
+                                                    Math.min(
+                                                        255,
+                                                        Math.round(val),
+                                                    ),
+                                                );
+                                    }
+                                }
+                            } else {
+                                // Binarized
+                                let sum = 0,
+                                    count = 0;
+                                for (let i = 0; i < len; i += 4) {
+                                    sum += data[i];
+                                    count++;
+                                }
+                                const threshold = sum / count;
+                                for (let i = 0; i < len; i += 4) {
+                                    const val = data[i] > threshold ? 255 : 0;
+                                    data[i] = data[i + 1] = data[i + 2] = val;
+                                }
+                            }
+
+                            ctx.putImageData(imageData, 0, 0);
+                            resolve(canvas.toDataURL("image/png"));
+                        };
+                        img.src = imageDataUrl;
+                    });
+                }
+
+                async process(imageDataUrl) {
+                    console.log("OCR: Processing...");
+                    const t0 = Date.now();
+
+                    // Create 4 variants in parallel
+                    const [standard, upscale2x, binarized] = await Promise.all([
+                        this.preprocess(imageDataUrl, "standard"),
+                        this.preprocess(imageDataUrl, "upscale2x"),
+                        this.preprocess(imageDataUrl, "binarized"),
+                    ]);
+
+                    const sources = [
+                        { name: "original", url: imageDataUrl },
+                        { name: "standard", url: standard },
+                        { name: "upscale2x", url: upscale2x },
+                        { name: "binarized", url: binarized },
+                    ];
+
+                    // Quick scan - 1 OCR per source
+                    let best = { text: "", length: 0, variant: "" };
+                    for (const src of sources) {
+                        try {
+                            const result = await Tesseract.recognize(
+                                src.url,
+                                "eng",
+                                { psm: 6, oem: 3, logger: () => {} },
+                            );
+                            const text = result.data.text || "";
+                            console.log(
+                                "OCR:",
+                                src.name,
+                                "len:",
+                                text.length,
+                                "conf:",
+                                result.data.confidence?.toFixed(2),
+                            );
+                            if (text.length > best.length) {
+                                best = {
+                                    text,
+                                    length: text.length,
+                                    variant: src.name,
+                                };
+                            }
+                        } catch (e) {
+                            console.warn(
+                                "OCR:",
+                                src.name,
+                                "failed:",
+                                e.message,
+                            );
+                        }
+                    }
+
+                    console.log(
+                        "OCR: Best =",
+                        best.variant,
+                        "(" + best.length + " chars) in",
+                        Date.now() - t0,
+                        "ms",
+                    );
+                    return { text: best.text, variant: best.variant };
+                }
+            }
+
+            const advancedOCR = new AdvancedOCREngine();
+
             let ocrParsedItems = [];
 
             function preprocessImage(imageDataUrl) {
@@ -6511,100 +6713,21 @@
                     return;
                 }
                 _ocrRunning = true;
-                console.log("runOcr: START, loadingCount:", loadingCount);
-                // Reset loading state - PASTIKAN loading di-hide dulu
                 forceHideLoading();
-                console.log("runOcr: After reset, loadingCount:", loadingCount);
                 showLoading("Memproses gambar...");
 
-                let processedUrl;
                 try {
-                    processedUrl = await preprocessImage(imageDataUrl);
-                } catch (err) {
-                    console.warn(
-                        "Preprocessing gagal, menggunakan gambar asli:",
-                        err,
-                    );
-                    processedUrl = imageDataUrl;
-                }
+                    // Use Advanced OCR Engine
+                    const result = await advancedOCR.process(imageDataUrl);
 
-                console.log(
-                    "runOcr: After preprocessing, loadingCount:",
-                    loadingCount,
-                );
-                hideLoading();
-                console.log(
-                    "runOcr: After hideLoading, loadingCount:",
-                    loadingCount,
-                );
-                showLoading("Membaca struk...");
-                console.log(
-                    "runOcr: After showLoading, loadingCount:",
-                    loadingCount,
-                );
+                    hideLoading();
+                    showLoading("Menganalisis struk...");
 
-                try {
-                    // Always try both preprocessed AND original image
-                    const sources = [processedUrl, imageDataUrl];
-                    console.log(
-                        "OCR: Will try both preprocessed and original image",
-                    );
+                    const normalized = normalizeOcrText(result.text);
+                    const merged = mergeOcrLinesForItemParsing(normalized);
+                    const parsed = parseReceiptText(merged);
 
-                    let bestParsedItems = [];
-                    let lastRawText = ""; // Store for debugging
-                    for (let i = 0; i < sources.length; i++) {
-                        const rawText = await runTesseractOcr(sources[i]);
-                        lastRawText = rawText; // Save for error reporting
-                        console.log(
-                            "OCR Raw text (source " + i + "):",
-                            rawText.substring(0, 500),
-                        );
-                        const normalized = normalizeOcrText(rawText);
-                        console.log(
-                            "OCR Normalized text (source " + i + "):",
-                            normalized.substring(0, 500),
-                        );
-                        const mergedRaw = mergeOcrLinesForItemParsing(rawText);
-                        const mergedNormalized =
-                            mergeOcrLinesForItemParsing(normalized);
-                        const candidates = [
-                            normalized,
-                            mergedNormalized,
-                            rawText,
-                            mergedRaw,
-                        ];
-
-                        // Coba SEMUA kandidat, pilih yang paling banyak item
-                        // Normalized diutamakan karena sudah ada fix OCR (184->194, dll)
-                        for (const candidateText of candidates) {
-                            const parsed = parseReceiptText(candidateText);
-                            if (parsed.length > bestParsedItems.length) {
-                                bestParsedItems = parsed;
-                            }
-                        }
-
-                        if (bestParsedItems.length > 0) {
-                            hideLoading(); // Berhasil, hide loading
-                            break; // Keluar dari loop
-                        }
-                        if (i === 0 && sources.length > 1) {
-                            hideLoading();
-                            showLoading(
-                                "Mencoba ulang OCR dengan gambar asli...",
-                            );
-                        }
-                        if (
-                            i === sources.length - 1 &&
-                            bestParsedItems.length === 0
-                        ) {
-                            hideLoading(); // Semua gagal, hide loading
-                            console.warn(
-                                "OCR: All sources failed to parse items",
-                            );
-                        }
-                    }
-
-                    ocrParsedItems = bestParsedItems;
+                    ocrParsedItems = parsed;
                     ocrParsedItems.forEach((item) => {
                         item.splitMode = "all";
                         item.sharedWith = [];
@@ -6612,27 +6735,16 @@
 
                     if (ocrParsedItems.length === 0) {
                         forceHideLoading();
-                        console.warn(
-                            "OCR: No items parsed from text. Raw samples:",
-                            lastRawText.substring(0, 300),
-                        );
                         openWarningModal(
                             "Tidak Terbaca",
-                            "Tidak ditemukan item pada struk. Coba foto yang lebih jelas dengan pencahayaan yang baik.",
+                            "Tidak ditemukan item pada struk. Coba foto yang lebih jelas.",
                         );
                         return;
                     }
 
-                    // Pastikan loading di-hide sebelum render
                     forceHideLoading();
-                    console.log(
-                        "runOcr: Before render, loadingCount:",
-                        loadingCount,
-                    );
-
                     renderOcrResults();
                     openOcrModal();
-                    console.log("runOcr: END, loadingCount:", loadingCount);
                 } catch (err) {
                     forceHideLoading();
                     console.error("OCR error:", err);
