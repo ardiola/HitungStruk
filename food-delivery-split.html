@@ -600,6 +600,40 @@
                 font-size: 20px;
                 margin-bottom: 10px;
             }
+
+            /* Loading modal (sama dengan index.html) */
+            #loadingModal {
+                z-index: 4000;
+            }
+            .loading-card {
+                width: 100%;
+                max-width: 320px;
+                background: #fff;
+                border-radius: 10px;
+                padding: 20px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .loading-spinner {
+                width: 22px;
+                height: 22px;
+                border: 3px solid #dce9ff;
+                border-top-color: #3498db;
+                border-radius: 50%;
+                animation: spin-loading 0.8s linear infinite;
+                flex-shrink: 0;
+            }
+            .loading-text {
+                margin: 0;
+                color: #2c3e50;
+                font-weight: 600;
+            }
+            @keyframes spin-loading {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
             .modal-actions {
                 display: flex;
                 gap: 10px;
@@ -880,7 +914,7 @@
                 .summary-input, .people-list, .order-form, .settings,
                 .input-section, .action-row, .bottom-actions, hr,
                 .card, h2:not(.print-section h2), table,
-                .empty-hint, #peopleStatus, .pc-share, .pc-avatar {
+                .empty-hint, .pc-share, .pc-avatar {
                     display: none !important;
                 }
                 .container { box-shadow: none; padding: 10px; background: #fff; }
@@ -974,9 +1008,6 @@
 
             <!-- STEP 1: JUMLAH ORANG (konsep sama dengan index.html) -->
             <h2>1. Jumlah Orang</h2>
-            <div id="peopleStatus" class="empty-hint" style="margin-bottom: 12px;">
-                ⏳ Memuat daftar teman...
-            </div>
             <div class="summary-input">
                 <span>Jumlah Orang:</span>
                 <div class="input-wrapper">
@@ -1163,6 +1194,42 @@
             </div>
         </div>
 
+        <!-- Modal Konfirmasi Hapus Pemesan (sama konsep dengan warning modal index.html) -->
+        <div
+            id="removePersonConfirmModal"
+            class="modal-overlay"
+            onclick="handleRemovePersonConfirmModalBackdrop(event)"
+        >
+            <div class="modal-content warning-modal-content">
+                <div class="warning-badge">!</div>
+                <h3 id="removePersonConfirmTitle" class="modal-title">
+                    Konfirmasi Hapus
+                </h3>
+                <p
+                    id="removePersonConfirmMessage"
+                    style="margin: 0; color: #2c3e50"
+                >
+                    Apakah Anda yakin ingin menghapus pemesan ini?
+                    Semua pesanannya juga akan ikut terhapus.
+                </p>
+                <div class="modal-actions">
+                    <button
+                        class="btn-add"
+                        onclick="closeRemovePersonConfirmModal()"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        id="removePersonConfirmButton"
+                        class="btn-reset"
+                        onclick="confirmRemovePerson()"
+                    >
+                        Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal Konfirmasi Reset (sama konsep dengan mainActionConfirmModal index.html) -->
         <div
             id="resetConfirmModal"
@@ -1197,6 +1264,16 @@
             </div>
         </div>
 
+        <!-- Loading modal (sama dengan index.html) -->
+        <div id="loadingModal" class="modal-overlay">
+            <div class="loading-card">
+                <div class="loading-spinner"></div>
+                <p id="loadingMessage" class="loading-text">
+                    Memuat aplikasi...
+                </p>
+            </div>
+        </div>
+
         <script>
             // ============================================
             // STATE
@@ -1207,6 +1284,38 @@
                 items: [],
             };
             let authToken = localStorage.getItem('authToken') || '';
+            let loadingCount = 0;
+
+            // ============================================
+            // LOADING (sama konsep dengan index.html)
+            // ============================================
+            function showLoading(message) {
+                const modal = document.getElementById('loadingModal');
+                const textElement = document.getElementById('loadingMessage');
+                loadingCount += 1;
+                if (textElement) {
+                    textElement.textContent = message || 'Memproses data...';
+                }
+                if (modal) {
+                    modal.classList.add('show');
+                }
+            }
+
+            function hideLoading() {
+                const modal = document.getElementById('loadingModal');
+                loadingCount = Math.max(0, loadingCount - 1);
+                if (loadingCount === 0 && modal) {
+                    modal.classList.remove('show');
+                }
+            }
+
+            function forceHideLoading() {
+                const modal = document.getElementById('loadingModal');
+                loadingCount = 0;
+                if (modal) {
+                    modal.classList.remove('show');
+                }
+            }
 
             const fmt = (n) =>
                 'Rp ' + Math.round(n).toLocaleString('id-ID').replace(/,/g, '.');
@@ -1248,32 +1357,21 @@
             }
 
             async function loadPeopleFromDb() {
-                const statusEl = document.getElementById('peopleStatus');
                 if (!authToken) {
-                    statusEl.innerHTML =
-                        '⚠️ Anda belum login. Silakan <a href="/index.html" style="color:#2980b9;font-weight:bold">login di halaman Struk Tagihan</a> terlebih dahulu.';
-                    statusEl.style.color = '#c0392b';
                     state.dbPeople = [];
+                    syncSplitCountInputLimit();
+                    updateApplyButtonState();
+                    forceHideLoading();
                     render();
                     return;
                 }
-                statusEl.textContent = '⏳ Memuat daftar teman...';
-                statusEl.style.color = '#7f8c8d';
+                showLoading('Memuat aplikasi...');
                 try {
                     const response = await apiFetch('/api/people');
                     if (!response.ok) {
-                        if (response.status === 401) {
-                            statusEl.innerHTML =
-                                '⚠️ Sesi login habis. Silakan <a href="/index.html" style="color:#2980b9;font-weight:bold">login ulang</a>.';
-                            statusEl.style.color = '#c0392b';
-                        } else {
-                            statusEl.textContent =
-                                '⚠️ Gagal memuat daftar teman (HTTP ' +
-                                response.status +
-                                ')';
-                            statusEl.style.color = '#c0392b';
-                        }
                         state.dbPeople = [];
+                        syncSplitCountInputLimit();
+                        updateApplyButtonState();
                         render();
                         return;
                     }
@@ -1283,25 +1381,17 @@
                         name: p.nama,
                         rekening: p.no_rekening || '',
                     }));
-                    if (state.dbPeople.length === 0) {
-                        statusEl.innerHTML =
-                            'ℹ️ Belum ada teman di database. Tambah dulu di <a href="/index.html" style="color:#2980b9;font-weight:bold">halaman Struk Tagihan</a>.';
-                        statusEl.style.color = '#7f8c8d';
-                    } else {
-                        statusEl.innerHTML = `✅ ${state.dbPeople.length} teman dimuat dari database. Masukkan jumlah orang lalu klik <strong>Terapkan</strong>.`;
-                        statusEl.style.color = '#27ae60';
-                    }
                     syncSplitCountInputLimit();
                     updateApplyButtonState();
                     render();
                 } catch (err) {
-                    statusEl.textContent =
-                        '⚠️ Gagal menghubungi server: ' + err.message;
-                    statusEl.style.color = '#c0392b';
+                    console.error('Gagal memuat daftar teman:', err);
                     state.dbPeople = [];
                     syncSplitCountInputLimit();
                     updateApplyButtonState();
                     render();
+                } finally {
+                    hideLoading();
                 }
             }
 
@@ -1537,6 +1627,50 @@
                 }
             }
 
+            // Hapus orang dari state.people (sudah dikonfirmasi) saja,
+            // TIDAK hapus dari state.dbPeople (database) supaya tetap muncul di pilihan Terapkan.
+            let pendingRemovePersonId = null;
+
+            function removePerson(id) {
+                const p = state.people.find(x => x.id === id);
+                if (!p) return;
+                pendingRemovePersonId = id;
+                const msg = document.getElementById('removePersonConfirmMessage');
+                if (msg) {
+                    msg.innerHTML = `Apakah Anda yakin ingin menghapus pemesan <strong>${escapeHtml(p.name)}</strong>? Semua pesanannya juga akan ikut terhapus.`;
+                }
+                const modal = document.getElementById('removePersonConfirmModal');
+                modal.classList.add('show');
+            }
+
+            function closeRemovePersonConfirmModal() {
+                const modal = document.getElementById('removePersonConfirmModal');
+                modal.classList.remove('show');
+                pendingRemovePersonId = null;
+            }
+
+            function handleRemovePersonConfirmModalBackdrop(event) {
+                if (event.target.id === 'removePersonConfirmModal') {
+                    closeRemovePersonConfirmModal();
+                }
+            }
+
+            function confirmRemovePerson() {
+                const id = pendingRemovePersonId;
+                closeRemovePersonConfirmModal();
+                if (id == null) return;
+                // Hapus orang dari yang sudah dikonfirmasi
+                state.people = state.people.filter(p => p.id !== id);
+                // Hapus items yang personId-nya orang ini
+                state.items = state.items.filter(i => i.personId !== id);
+                // Update appliedSplitCount & selectedSplitPeople
+                appliedSplitCount = state.people.length;
+                selectedSplitPeople = [];
+                document.getElementById('splitCount').value = String(Math.max(1, state.people.length));
+                updateApplyButtonState();
+                render();
+            }
+
             function confirmReset() {
                 closeResetConfirmModal();
                 state.people = [];
@@ -1747,15 +1881,6 @@
             // ============================================
             document.getElementById('addItemBtn').addEventListener('click', addItem);
             document.getElementById('resetBtn').addEventListener('click', openResetConfirmModal);
-            // Escape untuk tutup modal reset
-            document.addEventListener('keydown', e => {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('resetConfirmModal');
-                    if (modal && modal.classList.contains('show')) {
-                        closeResetConfirmModal();
-                    }
-                }
-            });
             document.getElementById('printBtn').addEventListener('click', () => window.print());
 
             // Enter di input splitCount = klik Terapkan
@@ -1766,13 +1891,22 @@
                 }
             });
 
-            // Tutup modal assign dengan Escape
+            // Escape untuk tutup modal (semua modal)
             document.addEventListener('keydown', e => {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('assignPeopleModal');
-                    if (modal && modal.classList.contains('show')) {
-                        closeAssignPeopleModal();
-                    }
+                if (e.key !== 'Escape') return;
+                const assignModal = document.getElementById('assignPeopleModal');
+                if (assignModal && assignModal.classList.contains('show')) {
+                    closeAssignPeopleModal();
+                    return;
+                }
+                const resetModal = document.getElementById('resetConfirmModal');
+                if (resetModal && resetModal.classList.contains('show')) {
+                    closeResetConfirmModal();
+                    return;
+                }
+                const removeModal = document.getElementById('removePersonConfirmModal');
+                if (removeModal && removeModal.classList.contains('show')) {
+                    closeRemovePersonConfirmModal();
                 }
             });
 
