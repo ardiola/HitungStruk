@@ -437,41 +437,9 @@ function authorizeAdmin(req, res, next) {
 }
 
 // === STATIC FILES (untuk development local) ===
-// Di Vercel, folder /public di-serve otomatis.
-// Di local, kita serve manual via explicit routes + folder `/public/...` alias.
-const publicDir = path.join(__dirname, "public");
-app.get("/", (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
-});
-app.get("/food-delivery-split.html", (req, res) => {
-  res.sendFile(path.join(publicDir, "food-delivery-split.html"));
-});
-app.get("/manifest.webmanifest", (req, res) => {
-  res.sendFile(path.join(publicDir, "manifest.webmanifest"));
-});
-app.get("/service-worker.js", (req, res) => {
-  res.sendFile(path.join(publicDir, "service-worker.js"));
-});
-app.use("/icons", express.static(path.join(__dirname, "public", "icons")));
-
-// Alias: serve /public/<filename> langsung dari folder public
-// (berguna kalau URL di-bookmark sebagai /public/index.html)
-// Match nested path juga, mis. /public/icons/icon-192.png
-app.get(/^\/public\/(.+)$/, (req, res) => {
-  const rel = req.params[0];
-  // Prevent path traversal
-  if (rel.includes("..")) {
-    return res.status(400).send("Bad request");
-  }
-  const filePath = path.join(publicDir, rel);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).send("Not found");
-  }
-  res.sendFile(filePath);
-});
-app.get("/public", (req, res) => {
-  res.redirect("/");
-});
+// Di Vercel, folder /public di-serve otomatis dari root URL.
+// Di local, pakai express.static agar file di /public/* di-serve dari /<filename>.
+app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/api/auth/register", async (req, res) => {
   const username = sanitizeUsername(req.body?.username);
