@@ -367,6 +367,18 @@
                 background-color: #c0392b;
             }
 
+            .btn-delivery {
+                background-color: #f59e0b;
+                color: #fff;
+                white-space: nowrap;
+                padding: 12px 14px;
+                font-size: 15px;
+            }
+
+            .btn-delivery:hover {
+                background-color: #d97706;
+            }
+
             table {
                 width: 100%;
                 border-collapse: collapse;
@@ -2571,6 +2583,17 @@
                         Tambah Teman
                     </button>
                 </div>
+                <div class="input-group">
+                    <button
+                        type="button"
+                        class="btn-add btn-delivery"
+                        onclick="
+                            window.location.href = '/food-delivery-split.html'
+                        "
+                    >
+                        🛵 Food Delivery Split
+                    </button>
+                </div>
                 <div id="adminUsersGroup" class="input-group">
                     <button
                         id="adminUsersButton"
@@ -2603,6 +2626,13 @@
                             onclick="handleMobileAction('add-friend')"
                         >
                             Tambah Teman
+                        </button>
+                        <button
+                            type="button"
+                            class="btn-add btn-delivery"
+                            onclick="handleMobileAction('food-delivery')"
+                        >
+                            🛵 Food Delivery Split
                         </button>
                         <button
                             id="mobileAdminAction"
@@ -3673,6 +3703,10 @@
                 }
                 if (action === "logout") {
                     openLogoutConfirmModal();
+                    return;
+                }
+                if (action === "food-delivery") {
+                    window.location.href = "/food-delivery-split.html";
                 }
             }
 
