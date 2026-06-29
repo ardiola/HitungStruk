@@ -438,10 +438,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get("/food-delivery-split.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "food-delivery-split.html"));
-});
-
 app.post("/api/auth/register", async (req, res) => {
   const username = sanitizeUsername(req.body?.username);
   const password = String(req.body?.password || "");
