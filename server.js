@@ -436,105 +436,10 @@ function authorizeAdmin(req, res, next) {
   next();
 }
 
-// === STATIC FILES (manual serving, work di Vercel Lambda) ===
-// Daftar file static yang di-serve manual. fs.readFileSync dieksekusi
-// saat module di-load, hasilnya di-cache di memory (letakkan di module scope).
-const staticFiles = {};
-function loadStaticFile(relPath) {
-  try {
-    return fs.readFileSync(path.join(__dirname, relPath));
-  } catch (err) {
-    console.warn("Gagal baca static file:", relPath, err.message);
-    return null;
-  }
-}
-staticFiles["/index.html"] = loadStaticFile("index.html");
-staticFiles["/food-delivery-split.html"] = loadStaticFile(
-  "food-delivery-split.html",
-);
-staticFiles["/manifest.webmanifest"] = loadStaticFile("manifest.webmanifest");
-staticFiles["/service-worker.js"] = loadStaticFile("service-worker.js");
-
-// Cache icon files (png)
-try {
-  const iconsDir = path.join(__dirname, "icons");
-  if (fs.existsSync(iconsDir)) {
-    for (const fname of fs.readdirSync(iconsDir)) {
-      if (fname.endsWith(".png")) {
-        staticFiles[`/icons/${fname}`] = loadStaticFile(`icons/${fname}`);
-      }
-    }
-  }
-} catch (err) {
-  console.warn("Gagal baca icons dir:", err.message);
-}
-
-const staticMimeTypes = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "application/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".webmanifest": "application/manifest+json; charset=utf-8",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".css": "text/css; charset=utf-8",
-};
-
-function getStaticMime(urlPath) {
-  for (const ext in staticMimeTypes) {
-    if (urlPath.endsWith(ext)) return staticMimeTypes[ext];
-  }
-  return "application/octet-stream";
-}
-
-function serveStatic(urlPath, res) {
-  const content = staticFiles[urlPath];
-  if (!content) return false;
-  res.setHeader("Content-Type", getStaticMime(urlPath));
-  res.setHeader("Cache-Control", "public, max-age=3600");
-  res.send(content);
-  return true;
-}
-
-app.get("/", (req, res) => {
-  if (serveStatic("/index.html", res)) return;
-  res.status(500).send("Gagal memuat halaman utama");
-});
-
-app.get("/food-delivery-split.html", (req, res) => {
-  if (serveStatic("/food-delivery-split.html", res)) return;
-  res.status(500).send("Gagal memuat halaman food delivery");
-});
-
-app.get("/manifest.webmanifest", (req, res) => {
-  if (serveStatic("/manifest.webmanifest", res)) return;
-  res.status(404).send("Not found");
-});
-
-app.get("/service-worker.js", (req, res) => {
-  if (serveStatic("/service-worker.js", res)) return;
-  res.status(404).send("Not found");
-});
-
-// Serve semua file di /icons/* (png, jpg, dll)
-app.get("/icons/:filename", (req, res) => {
-  const urlPath = `/icons/${req.params.filename}`;
-  if (serveStatic(urlPath, res)) return;
-  res.status(404).send("Not found");
-});
-
-// Fallback: kalau path ada extension (static file lain) yang belum di-handle
-app.get(
-  /^\/(.+\.(png|jpg|jpeg|gif|svg|ico|css|woff|woff2|ttf|eot))$/i,
-  (req, res) => {
-    const urlPath = req.path;
-    if (serveStatic(urlPath, res)) return;
-    res.status(404).send("Not found");
-  },
-);
+// === STATIC FILES ===
+// File HTML, CSS, JS, manifest, icons di-serve otomatis oleh Vercel dari
+// folder /public. Untuk development local, serve dari folder /public.
+app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/api/auth/register", async (req, res) => {
   const username = sanitizeUsername(req.body?.username);
