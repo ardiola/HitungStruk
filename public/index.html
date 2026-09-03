@@ -168,6 +168,21 @@
                 margin-bottom: 20px;
             }
 
+            .tax-calculation-fields {
+                grid-column: 1 / -1;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                padding: 12px;
+                border: 1px solid #dbeafe;
+                border-radius: 8px;
+                background: #f8fbff;
+            }
+
+            .tax-calculation-help {
+                grid-column: 1 / -1;
+                color: #4b5563;
+            }
+
             .input-group {
                 display: flex;
                 flex-direction: column;
@@ -2715,8 +2730,39 @@
                         type="text"
                         id="itemPrice"
                         placeholder="Harga"
-                        oninput="formatRupiah(this)"
+                        inputmode="numeric"
+                        oninput="formatItemValue(this)"
                     />
+                </div>
+
+                <div
+                    id="taxCalculationFields"
+                    class="tax-calculation-fields"
+                    style="display: none"
+                >
+                    <div class="input-group">
+                        <label for="taxNominalInput">Nominal Pajak (Rp):</label>
+                        <input
+                            type="text"
+                            id="taxNominalInput"
+                            placeholder="Nominal pajak"
+                            inputmode="numeric"
+                            oninput="formatRupiah(this); updateTaxRateFromNominal()"
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label for="taxBaseInput">Total Item (Rp):</label>
+                        <input
+                            type="text"
+                            id="taxBaseInput"
+                            placeholder="Total seluruh item"
+                            inputmode="numeric"
+                            oninput="formatRupiah(this); updateTaxRateFromNominal()"
+                        />
+                    </div>
+                    <small class="tax-calculation-help">
+                        Tarif pajak dihitung: nominal pajak ÷ total item × 100.
+                    </small>
                 </div>
 
                 <div class="input-group">
@@ -4047,6 +4093,109 @@
                 return parseFloat(formatted.replace(/[^\d,-]/g, "")) || 0;
             }
 
+            // Keep percentage input numeric while allowing decimal rates.
+            function formatPercentageInput(input) {
+                let value = String(input.value || "")
+                    .replace(",", ".")
+                    .replace(/[^\d.]/g, "");
+                const decimalIndex = value.indexOf(".");
+                if (decimalIndex !== -1) {
+                    value =
+                        value.slice(0, decimalIndex + 1) +
+                        value.slice(decimalIndex + 1).replace(/\./g, "");
+                }
+                input.value = value;
+            }
+
+            // Format the item value according to the selected item type.
+            function formatItemValue(input) {
+                const itemType = document.getElementById("itemType")?.value;
+                if (itemType === "tax") {
+                    formatPercentageInput(input);
+                } else {
+                    formatRupiah(input);
+                }
+            }
+
+            // Parse a percentage input, including Indonesian decimal notation.
+            function parsePercentage(value) {
+                const normalized = String(value ?? "")
+                    .trim()
+                    .replace(",", ".");
+                const parsed = Number.parseFloat(normalized);
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            // Format a calculated percentage without losing decimal precision.
+            function formatPercentageValue(value) {
+                return Number(value).toLocaleString("id-ID", {
+                    maximumFractionDigits: 6,
+                });
+            }
+
+            // Calculate the tax rate from a nominal amount and item total.
+            function updateTaxRateFromNominal() {
+                const nominalInput = document.getElementById(
+                    "taxNominalInput",
+                );
+                const totalItemInput =
+                    document.getElementById("taxBaseInput");
+                const rateInput = document.getElementById("itemPrice");
+                if (!nominalInput || !totalItemInput || !rateInput) {
+                    return;
+                }
+
+                const nominalTax = parseFormattedNumber(nominalInput.value);
+                const totalItem = parseFormattedNumber(totalItemInput.value);
+                if (nominalTax > 0 && totalItem > 0) {
+                    const roundedRate = Math.round(
+                        (nominalTax / totalItem) * 100,
+                    );
+                    rateInput.value = formatPercentageValue(roundedRate);
+                } else {
+                    rateInput.value = "";
+                }
+            }
+
+            // Return a tax rate from both current and older item shapes.
+            function getTaxRate(taxItem) {
+                const storedRate =
+                    taxItem?.taxPercent ?? taxItem?.taxRate ?? taxItem?.price;
+                return Math.max(0, parsePercentage(storedRate));
+            }
+
+            // Calculate each tax from every regular item, in entry order.
+            function calculateTaxBreakdown() {
+                const taxItems = items.filter((item) => item.isTax);
+                const taxAmounts = taxItems.map(() => 0);
+                const itemTaxAmounts = new Map();
+
+                items.filter((item) => !item.isTax).forEach((item) => {
+                    const itemSubtotal = Number(item.subtotal) || 0;
+                    let taxBase = itemSubtotal;
+                    let itemTaxTotal = 0;
+
+                    taxItems.forEach((taxItem, taxIndex) => {
+                        const taxAmount = taxBase * (getTaxRate(taxItem) / 100);
+                        taxAmounts[taxIndex] += taxAmount;
+                        itemTaxTotal += taxAmount;
+                        taxBase += taxAmount;
+                    });
+
+                    itemTaxAmounts.set(item.id, itemTaxTotal);
+                });
+
+                return {
+                    taxItems,
+                    taxAmounts,
+                    itemTaxAmounts,
+                    totalTax: taxAmounts.reduce(
+                        (sum, taxAmount) => sum + taxAmount,
+                        0,
+                    ),
+                };
+            }
+
             function updateItemFormByType() {
                 const itemType = document.getElementById("itemType").value;
                 const isTax = itemType === "tax";
@@ -4060,15 +4209,55 @@
                 const itemSplitPeopleButton = document.getElementById(
                     "itemSplitPeopleButton",
                 );
+                const itemValueInput = document.getElementById("itemPrice");
+                const itemQuantityInput =
+                    document.getElementById("itemQuantity");
+                const taxCalculationFields = document.getElementById(
+                    "taxCalculationFields",
+                );
+                const taxNominalInput =
+                    document.getElementById("taxNominalInput");
+                const taxBaseInput = document.getElementById("taxBaseInput");
+                const wasTaxInput = itemValueInput?.readOnly === true;
                 document.getElementById("itemNameLabel").textContent = isTax
                     ? "Nama Pajak:"
                     : "Nama Barang:";
                 document.getElementById("itemPriceLabel").textContent = isTax
-                    ? "Tarif Pajak (Rp):"
+                    ? "Tarif Pajak (%):"
                     : "Harga Satuan:";
                 document.getElementById("itemSubmitButton").textContent = isTax
                     ? "Tambah Pajak"
                     : "Tambah Item";
+                if (itemValueInput) {
+                    if (isTax && !wasTaxInput) {
+                        itemValueInput.value = "";
+                        if (taxNominalInput) taxNominalInput.value = "";
+                        if (taxBaseInput) taxBaseInput.value = "";
+                    } else if (!isTax && wasTaxInput) {
+                        itemValueInput.value = "";
+                        if (taxNominalInput) taxNominalInput.value = "";
+                        if (taxBaseInput) taxBaseInput.value = "";
+                    }
+                    itemValueInput.readOnly = isTax;
+                    itemValueInput.placeholder = isTax
+                        ? "Otomatis"
+                        : "Harga";
+                    itemValueInput.inputMode = isTax
+                        ? "decimal"
+                        : "numeric";
+                }
+                if (taxCalculationFields) {
+                    taxCalculationFields.style.display = isTax ? "grid" : "none";
+                }
+                if (isTax) {
+                    updateTaxRateFromNominal();
+                }
+                if (itemQuantityInput) {
+                    itemQuantityInput.disabled = isTax;
+                    if (isTax) {
+                        itemQuantityInput.value = "1";
+                    }
+                }
                 const disableSplitControls = isTax || splitCount <= 1;
                 if (splitMode) {
                     splitMode.disabled = disableSplitControls;
@@ -4088,20 +4277,34 @@
             // Add item to the list
             function addItem() {
                 const itemType = document.getElementById("itemType").value;
+                const isTax = itemType === "tax";
+                if (isTax) {
+                    updateTaxRateFromNominal();
+                }
                 const name = document.getElementById("itemName").value.trim();
-                const price = parseFormattedNumber(
-                    document.getElementById("itemPrice").value,
-                );
+                const itemValue = document.getElementById("itemPrice").value;
+                const price = isTax
+                    ? parsePercentage(itemValue)
+                    : parseFormattedNumber(itemValue);
+                const taxNominal = isTax
+                    ? parseFormattedNumber(
+                          document.getElementById("taxNominalInput").value,
+                      )
+                    : 0;
+                const taxBase = isTax
+                    ? parseFormattedNumber(
+                          document.getElementById("taxBaseInput").value,
+                      )
+                    : 0;
                 const itemSplitMode = document.getElementById("itemSplitMode");
                 const itemSplitPeopleInput = document.getElementById(
                     "itemSplitPeopleCount",
                 );
-                const isTax = itemType === "tax";
                 const nameLabel = isTax ? "Nama pajak" : "Nama barang";
                 const priceLabel = isTax ? "Tarif pajak" : "Harga";
-                const quantity = parseInt(
-                    document.getElementById("itemQuantity").value,
-                );
+                const quantity = isTax
+                    ? 1
+                    : parseInt(document.getElementById("itemQuantity").value);
                 const splitCount =
                     parseInt(document.getElementById("splitCount").value, 10) ||
                     1;
@@ -4115,10 +4318,24 @@
                     return;
                 }
 
-                if (isNaN(price) || price <= 0) {
+                if (isTax && (taxNominal <= 0 || taxBase <= 0)) {
+                    openWarningModal(
+                        "Input Pajak Belum Lengkap",
+                        "Isi nominal pajak dan total seluruh item terlebih dahulu.",
+                    );
+                    return;
+                }
+
+                if (
+                    isNaN(price) ||
+                    price <= 0 ||
+                    (isTax && price > 100)
+                ) {
                     openWarningModal(
                         "Input Tidak Valid",
-                        `${priceLabel} harus berupa angka positif!`,
+                        isTax
+                            ? `${priceLabel} harus lebih dari 0 dan maksimal 100%!`
+                            : `${priceLabel} harus berupa angka positif!`,
                     );
                     return;
                 }
@@ -4137,9 +4354,14 @@
                     name: name,
                     price: price,
                     quantity: quantity,
-                    subtotal: price * quantity,
+                    subtotal: isTax ? 0 : price * quantity,
                     isTax: isTax,
                 };
+                if (isTax) {
+                    item.taxPercent = price;
+                    item.taxNominal = taxNominal;
+                    item.taxBase = taxBase;
+                }
                 if (
                     !isTax &&
                     splitCount > 1 &&
@@ -4188,6 +4410,8 @@
                 // Clear inputs
                 document.getElementById("itemName").value = "";
                 document.getElementById("itemPrice").value = "";
+                document.getElementById("taxNominalInput").value = "";
+                document.getElementById("taxBaseInput").value = "";
                 document.getElementById("itemQuantity").value = "1";
                 document.getElementById("itemType").value = "item";
                 document.getElementById("itemSplitMode").value = "all";
@@ -4218,14 +4442,27 @@
             // Render items table
             function renderTable() {
                 const tbody = document.querySelector("#itemsTable tbody");
+                const taxBreakdown = calculateTaxBreakdown();
+                const taxAmountById = new Map(
+                    taxBreakdown.taxItems.map((taxItem, index) => [
+                        taxItem.id,
+                        taxBreakdown.taxAmounts[index],
+                    ]),
+                );
                 tbody.innerHTML = "";
 
                 items.forEach((item) => {
                     const row = document.createElement("tr");
+                    const taxRateDisplay = getTaxRate(item).toLocaleString(
+                        "id-ID",
+                        { maximumFractionDigits: 2 },
+                    );
+                    const itemTaxAmount =
+                        taxBreakdown.itemTaxAmounts.get(item.id) || 0;
 
                     let nameDisplay = item.name;
                     if (item.isTax) {
-                        nameDisplay = `<strong>${item.name} (Pajak)</strong>`;
+                        nameDisplay = `<strong>${item.name} (Pajak ${taxRateDisplay}%)</strong>`;
                     } else if (item.sharedAll) {
                         nameDisplay = `${item.name} <span style="font-size:0.8em;color:#3498db;">(Dibagi: Semua Orang)</span>`;
                     } else if (
@@ -4245,11 +4482,23 @@
                         nameDisplay = `${item.name} <span style="font-size:0.8em;color:#3498db;">(${personName})</span>`;
                     }
 
+                    const priceDisplay = item.isTax
+                        ? `${taxRateDisplay}%`
+                        : formatNumber(item.price);
+                    const quantityDisplay = item.isTax ? "-" : item.quantity;
+                    const subtotalDisplay = item.isTax
+                        ? formatNumber(taxAmountById.get(item.id) || 0)
+                        : `${formatNumber(item.subtotal)}${
+                              taxBreakdown.taxItems.length > 0
+                                  ? `<small style="display:block;color:#6b7280;font-size:0.8em;">Pajak item: ${formatNumber(itemTaxAmount)}<br>Total termasuk pajak: ${formatNumber(item.subtotal + itemTaxAmount)}</small>`
+                                  : ""
+                          }`;
+
                     row.innerHTML = `
                     <td data-label="Nama">${nameDisplay}</td>
-                    <td data-label="Harga">${formatNumber(item.price)}</td>
-                    <td data-label="Jumlah">${item.quantity}</td>
-                    <td data-label="Subtotal">${formatNumber(item.subtotal)}</td>
+                    <td data-label="Harga">${priceDisplay}</td>
+                    <td data-label="Jumlah">${quantityDisplay}</td>
+                    <td data-label="Subtotal">${subtotalDisplay}</td>
                     <td data-label="Aksi">
                         <button class="actions-btn" onclick="removeItem(${item.id})">Hapus</button>
                     </td>
@@ -4263,20 +4512,20 @@
             function calculateTotal() {
                 const splitCount =
                     parseInt(document.getElementById("splitCount").value) || 1;
+                const taxBreakdown = calculateTaxBreakdown();
+                const taxItems = taxBreakdown.taxItems;
 
-                // Initialize per-person arrays
+                // Allocate only regular item values to each person first.
                 const personItems = Array(splitCount)
                     .fill()
                     .map(() => []);
-                const personTaxItems = Array(splitCount)
-                    .fill()
-                    .map(() => []);
 
-                // Categorize items by person
                 items.forEach((item) => {
-                    const targetBuckets = item.isTax
-                        ? personTaxItems
-                        : personItems;
+                    if (item.isTax) {
+                        return;
+                    }
+
+                    const itemSubtotal = Number(item.subtotal) || 0;
                     if (
                         Array.isArray(item.sharedWith) &&
                         item.sharedWith.length > 0 &&
@@ -4291,9 +4540,9 @@
                         );
                         if (validSharedPeople.length > 0) {
                             const sharedSubtotal =
-                                item.subtotal / validSharedPeople.length;
+                                itemSubtotal / validSharedPeople.length;
                             validSharedPeople.forEach((personNumber) => {
-                                targetBuckets[personNumber - 1].push({
+                                personItems[personNumber - 1].push({
                                     subtotal: sharedSubtotal,
                                 });
                             });
@@ -4306,69 +4555,71 @@
                         item.person >= 1 &&
                         item.person <= splitCount
                     ) {
-                        targetBuckets[item.person - 1].push(item);
+                        personItems[item.person - 1].push({
+                            subtotal: itemSubtotal,
+                        });
                     } else {
                         // Items without explicit assignment are distributed equally.
-                        if (splitCount > 1) {
-                            const equalShare = item.subtotal / splitCount;
-                            for (let i = 0; i < splitCount; i++) {
-                                targetBuckets[i].push({ subtotal: equalShare });
-                            }
-                        } else {
-                            targetBuckets[0].push(item);
+                        const equalShare =
+                            splitCount > 1
+                                ? itemSubtotal / splitCount
+                                : itemSubtotal;
+                        for (let i = 0; i < splitCount; i++) {
+                            personItems[i].push({ subtotal: equalShare });
                         }
                     }
                 });
 
-                // Calculate totals for each person
-                const personTotals = [];
-                for (let i = 0; i < splitCount; i++) {
-                    const itemsSubtotal = personItems[i].reduce(
-                        (sum, item) => sum + item.subtotal,
+                const personItemSubtotals = personItems.map((personItemsList) =>
+                    personItemsList.reduce(
+                        (sum, item) => sum + (Number(item.subtotal) || 0),
                         0,
-                    );
-                    const taxItemsSubtotal = personTaxItems[i].reduce(
-                        (sum, item) => sum + item.subtotal,
-                        0,
-                    );
-                    const personTotal = itemsSubtotal + taxItemsSubtotal;
-                    personTotals.push({
-                        subtotal: itemsSubtotal,
-                        tax: taxItemsSubtotal,
-                        total: personTotal,
-                    });
-                }
+                    ),
+                );
+                const allItemsSubtotal = personItemSubtotals.reduce(
+                    (sum, subtotal) => sum + subtotal,
+                    0,
+                );
 
-                // Get discount and tax inputs
+                // Apply each percentage to every person's item share. The next
+                // tax uses the previous tax-inclusive base (Service then PB1).
+                const personTaxTotals = Array(splitCount).fill(0);
+                taxItems.forEach((taxItem) => {
+                    const taxRate = getTaxRate(taxItem) / 100;
+                    for (let i = 0; i < splitCount; i++) {
+                        const taxBase =
+                            personItemSubtotals[i] + personTaxTotals[i];
+                        personTaxTotals[i] += taxBase * taxRate;
+                    }
+                });
+
+                const personTotals = personItemSubtotals.map(
+                    (itemsSubtotal, index) => ({
+                        subtotal: itemsSubtotal,
+                        tax: personTaxTotals[index],
+                        total: itemsSubtotal + personTaxTotals[index],
+                    }),
+                );
+                const allTaxItemsSubtotal = personTaxTotals.reduce(
+                    (sum, taxAmount) => sum + taxAmount,
+                    0,
+                );
+
+                // Get discount input. Tax is already calculated from item shares.
                 const discountAmountInput =
                     parseFormattedNumber(
                         document.getElementById("discountAmountInput").value,
-                    ) || 0;
-                const taxAmountInput =
-                    parseFormattedNumber(
-                        document.getElementById("taxAmountInput").value,
                     ) || 0;
                 const discountPercent =
                     parseFloat(
                         document.getElementById("discountPercent").value,
                     ) || 0;
-                const taxPercent =
-                    parseFloat(document.getElementById("taxPercent").value) ||
-                    0;
-
-                // Calculate overall subtotal and tax
-                const allItemsSubtotal = items
-                    .filter((item) => !item.isTax)
-                    .reduce((sum, item) => sum + item.subtotal, 0);
-                const allTaxItemsSubtotal = items
-                    .filter((item) => item.isTax)
-                    .reduce((sum, item) => sum + item.subtotal, 0);
 
                 // Calculate discount amount
                 let discountAmount = 0;
                 if (discountAmountInput > 0) {
                     discountAmount = discountAmountInput;
-                    // Apply fixed discount proportionally to each person based on their item subtotal share
+                    // Apply fixed discount proportionally to each person's items.
                     for (let i = 0; i < personTotals.length; i++) {
                         const personShare =
                             personTotals[i].subtotal / (allItemsSubtotal || 1);
@@ -4380,7 +4631,7 @@
                     }
                 } else if (discountPercent > 0) {
                     discountAmount = allItemsSubtotal * (discountPercent / 100);
-                    // Apply percentage discount proportionally to each person based on their item subtotal share
+                    // Apply percentage discount proportionally to each person's items.
                     for (let i = 0; i < personTotals.length; i++) {
                         const personShare =
                             personTotals[i].subtotal / (allItemsSubtotal || 1);
@@ -4397,7 +4648,7 @@
 
                 // Calculate grand total
                 const grandTotal = personTotals.reduce(
-                    (sum, p) => sum + p.total,
+                    (sum, person) => sum + person.total,
                     0,
                 );
 
@@ -4860,6 +5111,8 @@
                 transferAccountFriendId = null;
                 document.getElementById("itemName").value = "";
                 document.getElementById("itemPrice").value = "";
+                document.getElementById("taxNominalInput").value = "";
+                document.getElementById("taxBaseInput").value = "";
                 document.getElementById("itemQuantity").value = "1";
                 document.getElementById("itemType").value = "item";
                 document.getElementById("itemSplitMode").value = "all";
