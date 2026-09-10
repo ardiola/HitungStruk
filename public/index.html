@@ -2741,27 +2741,34 @@
                     style="display: none"
                 >
                     <div class="input-group">
-                        <label for="taxNominalInput">Nominal Pajak (Rp):</label>
+                        <label for="taxNominalInput">
+                            Nominal Pajak (Rp, opsional):
+                        </label>
                         <input
                             type="text"
                             id="taxNominalInput"
-                            placeholder="Nominal pajak"
+                            placeholder="Nominal pajak (opsional)"
                             inputmode="numeric"
                             oninput="formatRupiah(this); updateTaxRateFromNominal()"
                         />
                     </div>
                     <div class="input-group">
-                        <label for="taxBaseInput">Total Item (Rp):</label>
+                        <label for="taxBaseInput">
+                            Dasar Sebelum Pajak Ini (Rp, opsional):
+                        </label>
                         <input
                             type="text"
                             id="taxBaseInput"
-                            placeholder="Total seluruh item"
+                            placeholder="Subtotal item sebelum pajak (opsional)"
                             inputmode="numeric"
                             oninput="formatRupiah(this); updateTaxRateFromNominal()"
                         />
                     </div>
                     <small class="tax-calculation-help">
-                        Tarif pajak dihitung: nominal pajak ÷ total item × 100.
+                        Isi tarif pajak langsung, atau gunakan nominal dan dasar
+                        opsional untuk menghitungnya otomatis. Dasar efektif
+                        otomatis mencakup nominal pajak yang sudah ditambahkan
+                        sebelumnya.
                     </small>
                 </div>
 
@@ -4146,14 +4153,22 @@
                 }
 
                 const nominalTax = parseFormattedNumber(nominalInput.value);
-                const totalItem = parseFormattedNumber(totalItemInput.value);
-                if (nominalTax > 0 && totalItem > 0) {
+                const baseBeforeCurrentTax = parseFormattedNumber(
+                    totalItemInput.value,
+                );
+                const effectiveTaxBase = getEffectiveTaxBase(
+                    baseBeforeCurrentTax,
+                );
+                // Only auto-fill when both optional helper values are present.
+                if (
+                    nominalTax > 0 &&
+                    baseBeforeCurrentTax > 0 &&
+                    effectiveTaxBase > 0
+                ) {
                     const roundedRate = Math.round(
-                        (nominalTax / totalItem) * 100,
+                        (nominalTax / effectiveTaxBase) * 100,
                     );
                     rateInput.value = formatPercentageValue(roundedRate);
-                } else {
-                    rateInput.value = "";
                 }
             }
 
@@ -4162,6 +4177,65 @@
                 const storedRate =
                     taxItem?.taxPercent ?? taxItem?.taxRate ?? taxItem?.price;
                 return Math.max(0, parsePercentage(storedRate));
+            }
+
+            // Calculate the subtotal for regular items only.
+            function getRegularItemsSubtotal() {
+                return items
+                    .filter((item) => !item.isTax)
+                    .reduce(
+                        (total, item) => total + (Number(item.subtotal) || 0),
+                        0,
+                    );
+            }
+
+            // Use the entered base or the current regular-item subtotal when
+            // optional tax-base input is empty.
+            function getTaxBaseForMetadata(taxBase) {
+                const enteredBase = Number(taxBase) || 0;
+                return enteredBase > 0
+                    ? enteredBase
+                    : getRegularItemsSubtotal();
+            }
+
+            // Return a stored tax nominal, with a rate/base fallback for older rows.
+            function getTaxNominal(taxItem) {
+                const storedNominal = Number(taxItem?.taxNominal);
+                if (Number.isFinite(storedNominal) && storedNominal > 0) {
+                    return storedNominal;
+                }
+
+                const storedEffectiveBase = Number(
+                    taxItem?.effectiveTaxBase,
+                );
+                const taxBase =
+                    Number.isFinite(storedEffectiveBase) &&
+                    storedEffectiveBase > 0
+                        ? storedEffectiveBase
+                        : Number(taxItem?.taxBase) || 0;
+                const taxRate = getTaxRate(taxItem);
+                return taxBase > 0 && taxRate > 0
+                    ? taxBase * (taxRate / 100)
+                    : 0;
+            }
+
+            // Sum tax nominals already added before the current tax.
+            function getPriorTaxNominalTotal() {
+                return items
+                    .filter((item) => item.isTax)
+                    .reduce(
+                        (total, taxItem) => total + getTaxNominal(taxItem),
+                        0,
+                    );
+            }
+
+            // The current input is before this tax; prior tax nominals are added
+            // to get the effective denominator used for the rate.
+            function getEffectiveTaxBase(baseBeforeCurrentTax) {
+                return (
+                    (Number(baseBeforeCurrentTax) || 0) +
+                    getPriorTaxNominalTotal()
+                );
             }
 
             // Calculate each tax from every regular item, in entry order.
@@ -4218,7 +4292,9 @@
                 const taxNominalInput =
                     document.getElementById("taxNominalInput");
                 const taxBaseInput = document.getElementById("taxBaseInput");
-                const wasTaxInput = itemValueInput?.readOnly === true;
+                const wasTaxInput =
+                    itemValueInput?.readOnly === true ||
+                    taxCalculationFields?.style.display === "grid";
                 document.getElementById("itemNameLabel").textContent = isTax
                     ? "Nama Pajak:"
                     : "Nama Barang:";
@@ -4232,15 +4308,24 @@
                     if (isTax && !wasTaxInput) {
                         itemValueInput.value = "";
                         if (taxNominalInput) taxNominalInput.value = "";
-                        if (taxBaseInput) taxBaseInput.value = "";
+                        if (taxBaseInput) {
+                            const regularItemsSubtotal =
+                                getRegularItemsSubtotal();
+                            taxBaseInput.value =
+                                regularItemsSubtotal > 0
+                                    ? regularItemsSubtotal.toLocaleString(
+                                          "id-ID",
+                                      )
+                                    : "";
+                        }
                     } else if (!isTax && wasTaxInput) {
                         itemValueInput.value = "";
                         if (taxNominalInput) taxNominalInput.value = "";
                         if (taxBaseInput) taxBaseInput.value = "";
                     }
-                    itemValueInput.readOnly = isTax;
+                    itemValueInput.readOnly = false;
                     itemValueInput.placeholder = isTax
-                        ? "Otomatis"
+                        ? "Tarif pajak (%)"
                         : "Harga";
                     itemValueInput.inputMode = isTax
                         ? "decimal"
@@ -4278,14 +4363,7 @@
             function addItem() {
                 const itemType = document.getElementById("itemType").value;
                 const isTax = itemType === "tax";
-                if (isTax) {
-                    updateTaxRateFromNominal();
-                }
                 const name = document.getElementById("itemName").value.trim();
-                const itemValue = document.getElementById("itemPrice").value;
-                const price = isTax
-                    ? parsePercentage(itemValue)
-                    : parseFormattedNumber(itemValue);
                 const taxNominal = isTax
                     ? parseFormattedNumber(
                           document.getElementById("taxNominalInput").value,
@@ -4296,6 +4374,13 @@
                           document.getElementById("taxBaseInput").value,
                       )
                     : 0;
+                if (isTax && taxNominal > 0 && taxBase > 0) {
+                    updateTaxRateFromNominal();
+                }
+                const itemValue = document.getElementById("itemPrice").value;
+                const price = isTax
+                    ? parsePercentage(itemValue)
+                    : parseFormattedNumber(itemValue);
                 const itemSplitMode = document.getElementById("itemSplitMode");
                 const itemSplitPeopleInput = document.getElementById(
                     "itemSplitPeopleCount",
@@ -4314,14 +4399,6 @@
                     openWarningModal(
                         "Item Kosong",
                         `${nameLabel} tidak boleh kosong!`,
-                    );
-                    return;
-                }
-
-                if (isTax && (taxNominal <= 0 || taxBase <= 0)) {
-                    openWarningModal(
-                        "Input Pajak Belum Lengkap",
-                        "Isi nominal pajak dan total seluruh item terlebih dahulu.",
                     );
                     return;
                 }
@@ -4348,6 +4425,20 @@
                     return;
                 }
 
+                let effectiveTaxBase = 0;
+                let storedTaxNominal = 0;
+                if (isTax) {
+                    const taxBaseForMetadata =
+                        getTaxBaseForMetadata(taxBase);
+                    effectiveTaxBase = getEffectiveTaxBase(
+                        taxBaseForMetadata,
+                    );
+                    storedTaxNominal =
+                        taxNominal > 0
+                            ? taxNominal
+                            : effectiveTaxBase * (price / 100);
+                }
+
                 // Create item object
                 const item = {
                     id: Date.now(), // Simple ID generation
@@ -4359,8 +4450,9 @@
                 };
                 if (isTax) {
                     item.taxPercent = price;
-                    item.taxNominal = taxNominal;
+                    item.taxNominal = storedTaxNominal;
                     item.taxBase = taxBase;
+                    item.effectiveTaxBase = effectiveTaxBase;
                 }
                 if (
                     !isTax &&
