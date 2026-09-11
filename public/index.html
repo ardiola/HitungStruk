@@ -7086,6 +7086,94 @@
                 }
             }
 
+            // PENTING: key ini publik dan terlihat oleh siapa saja yang membuka
+            // halaman ini (DevTools/Network tab). Wajib dibatasi (restrict) by
+            // HTTP referrer + API restriction di Google Cloud Console sebelum
+            // deploy, dan JANGAN commit key asli ke git.
+            const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE";
+            const GEMINI_MODEL = "gemini-2.5-flash";
+            const GEMINI_SCAN_PROMPT =
+                "Ini foto struk belanja Indonesia. Ekstrak semua item beserta harganya " +
+                "menjadi JSON sesuai schema. Abaikan promo/diskon baris terpisah kecuali " +
+                "memengaruhi total_price item. Gunakan angka murni tanpa 'Rp' atau titik ribuan.";
+            const GEMINI_RECEIPT_SCHEMA = {
+                type: "OBJECT",
+                properties: {
+                    merchant: { type: "STRING" },
+                    date: { type: "STRING" },
+                    items: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                name: { type: "STRING" },
+                                qty: { type: "NUMBER" },
+                                unit_price: { type: "NUMBER" },
+                                total_price: { type: "NUMBER" },
+                            },
+                            required: ["name", "total_price"],
+                        },
+                    },
+                    subtotal: { type: "NUMBER" },
+                    tax: { type: "NUMBER" },
+                    total: { type: "NUMBER" },
+                },
+                required: ["items", "total"],
+            };
+
+            async function scanReceiptWithGemini(imageDataUrl) {
+                const match = imageDataUrl.match(
+                    /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/,
+                );
+                if (!match) {
+                    throw new Error(
+                        "Format gambar harus JPEG, PNG, atau WebP",
+                    );
+                }
+                const [, mimeType, base64Data] = match;
+
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [
+                                {
+                                    role: "user",
+                                    parts: [
+                                        { text: GEMINI_SCAN_PROMPT },
+                                        {
+                                            inlineData: {
+                                                mimeType,
+                                                data: base64Data,
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                            generationConfig: {
+                                responseMimeType: "application/json",
+                                responseSchema: GEMINI_RECEIPT_SCHEMA,
+                            },
+                        }),
+                    },
+                );
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(
+                        data?.error?.message || "Gagal memindai struk",
+                    );
+                }
+
+                const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) {
+                    throw new Error("Gemini tidak mengembalikan hasil");
+                }
+                return JSON.parse(text);
+            }
+
             async function runOcr(imageDataUrl) {
                 if (_ocrRunning) {
                     console.log("runOcr: Already running, ignoring");
@@ -7093,24 +7181,40 @@
                 }
                 _ocrRunning = true;
                 forceHideLoading();
-                showLoading("Memproses gambar...");
+                showLoading("Menganalisis struk...");
 
                 try {
-                    // Use Advanced OCR Engine
-                    const result = await advancedOCR.process(imageDataUrl);
-
-                    hideLoading();
-                    showLoading("Menganalisis struk...");
-
-                    const normalized = normalizeOcrText(result.text);
-                    const merged = mergeOcrLinesForItemParsing(normalized);
-                    const parsed = parseReceiptText(merged);
-
-                    ocrParsedItems = parsed;
-                    ocrParsedItems.forEach((item) => {
-                        item.splitMode = "all";
-                        item.sharedWith = [];
-                    });
+                    const result = await scanReceiptWithGemini(imageDataUrl);
+                    const rawItems = Array.isArray(result.items)
+                        ? result.items
+                        : [];
+                    ocrParsedItems = rawItems
+                        .filter(
+                            (item) =>
+                                item &&
+                                item.name &&
+                                Number(item.total_price) > 0,
+                        )
+                        .map((item) => {
+                            const quantity =
+                                Number.isInteger(item.qty) && item.qty > 0
+                                    ? item.qty
+                                    : 1;
+                            const unitPrice =
+                                Number(item.unit_price) > 0
+                                    ? Math.round(item.unit_price)
+                                    : Math.round(
+                                          Number(item.total_price) / quantity,
+                                      );
+                            return {
+                                name: String(item.name).trim(),
+                                price: unitPrice,
+                                quantity,
+                                selected: true,
+                                splitMode: "all",
+                                sharedWith: [],
+                            };
+                        });
 
                     if (ocrParsedItems.length === 0) {
                         forceHideLoading();
@@ -7128,8 +7232,9 @@
                     forceHideLoading();
                     console.error("OCR error:", err);
                     openWarningModal(
-                        "OCR Gagal",
-                        "Terjadi kesalahan saat membaca struk: " + err.message,
+                        "Scan Gagal",
+                        "Terjadi kesalahan saat memindai struk: " +
+                            err.message,
                     );
                 } finally {
                     _ocrRunning = false;

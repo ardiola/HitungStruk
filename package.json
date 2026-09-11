@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "build": "node scripts/inject-gemini-key.js",
     "migrate:turso": "node migrate-to-turso.js"
   },
   "dependencies": {
