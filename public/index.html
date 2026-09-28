@@ -1096,6 +1096,77 @@
                 background: #fff;
             }
 
+            /* Checklist "Pilih Teman per Orang": yang scroll hanya daftarnya,
+               ringkasan jumlah tetap terlihat. */
+            #assignFriendsFields {
+                max-height: none;
+                overflow: visible;
+                padding-right: 0;
+            }
+            .assign-check-summary {
+                font-size: 13px;
+                font-weight: 600;
+                color: #b45309;
+            }
+            .assign-check-summary.is-complete {
+                color: #15803d;
+            }
+            .assign-check-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                max-height: min(50vh, 320px);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-right: 2px;
+            }
+            .assign-check-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-height: 44px;
+                padding: 8px 12px;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 10px;
+                background: #fff;
+                cursor: pointer;
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+                box-sizing: border-box;
+            }
+            .assign-check-item.is-checked {
+                border-color: #2563eb;
+                background: #eff6ff;
+            }
+            .assign-check-item.is-disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            .assign-check-item input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+                margin: 0;
+                flex-shrink: 0;
+                accent-color: #2563eb;
+            }
+            .assign-check-name {
+                flex: 1 1 auto;
+                min-width: 0;
+                font-size: 14px;
+                color: #1e293b;
+                overflow-wrap: anywhere;
+            }
+            .assign-check-badge {
+                flex-shrink: 0;
+                padding: 2px 8px;
+                border-radius: 999px;
+                background: #2563eb;
+                color: #fff;
+                font-size: 12px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
             .assign-modal-content {
                 max-width: 420px;
                 padding: 0;
@@ -2510,56 +2581,43 @@
                 color: #475569;
                 line-height: 1.4;
             }
-            #ocrResults .ocr-person-checklist {
+            #ocrResults .ocr-split-row {
                 display: flex;
-                flex-direction: column;
-                gap: 6px;
-                margin-left: 32px;
-            }
-            #ocrResults .ocr-person-checklist-label {
-                font-size: 13px;
-                font-weight: 500;
-                color: #64748b;
-            }
-            #ocrResults .ocr-person-checklist-items {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 8px;
-            }
-            #ocrResults .ocr-person-check {
-                display: flex;
+                flex-wrap: wrap;
                 align-items: center;
                 gap: 8px;
-                min-height: 40px;
-                padding: 6px 10px;
-                border: 1.5px solid #e2e8f0;
-                border-radius: 10px;
-                background: #f8fafc;
-                cursor: pointer;
-                user-select: none;
-                -webkit-tap-highlight-color: transparent;
-                transition:
-                    border-color 0.15s,
-                    background 0.15s;
+                width: auto;
+                margin: 0 0 0 32px;
+                padding: 0;
             }
-            #ocrResults .ocr-person-check:has(input:checked) {
-                border-color: #2563eb;
-                background: #eff6ff;
-            }
-            #ocrResults .ocr-person-check input[type="checkbox"] {
-                width: 20px;
-                height: 20px;
+            #ocrResults .ocr-split-label {
+                width: auto;
                 margin: 0;
-                flex-shrink: 0;
-                accent-color: #2563eb;
-            }
-            #ocrResults .ocr-person-check span {
-                min-width: 0;
-                font-size: 14px;
-                color: #1e293b;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                font-size: 13px;
                 white-space: nowrap;
+            }
+            #ocrResults .ocr-split-select {
+                flex: 1 1 160px;
+                width: auto;
+                max-width: 260px;
+                min-width: 0;
+                min-height: 40px;
+                margin: 0;
+                padding: 8px 32px 8px 14px;
+                font-size: 13px;
+                background-position: right 12px center;
+            }
+            #ocrResults .ocr-custom-split-wrap {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin: 0 0 0 32px;
+                padding: 0;
+            }
+            #ocrResults .ocr-chip-text {
+                min-height: 36px;
+                padding: 6px 14px;
+                font-size: 13px;
             }
         </style>
         <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -6418,6 +6476,11 @@
                 }
             }
 
+            // Slot ke-i berisi id teman untuk "Orang i+1" (null = kosong). Slot dipakai
+            // supaya melepas satu centang tidak menggeser nomor orang yang lain,
+            // karena item yang sudah di-assign menyimpan nomor orangnya.
+            let assignFriendSlots = [];
+
             function renderAssignFriendsFields(forcedSplitCount) {
                 const splitCount =
                     forcedSplitCount ||
@@ -6433,82 +6496,129 @@
                     return;
                 }
 
+                const knownIds = new Set(
+                    peopleCache.map((person) => Number(person.id)),
+                );
+                assignFriendSlots = Array.from(
+                    { length: splitCount },
+                    (_, i) => {
+                        const existing = selectedSplitPeople.find(
+                            (person) => person.personIndex === i + 1,
+                        );
+                        return existing && knownIds.has(existing.friendId)
+                            ? existing.friendId
+                            : null;
+                    },
+                );
+                paintAssignFriendsChecklist();
+            }
+
+            function paintAssignFriendsChecklist() {
+                const container = document.getElementById(
+                    "assignFriendsFields",
+                );
+                if (!container) return;
+
+                const splitCount = assignFriendSlots.length;
+                const filledCount = assignFriendSlots.filter(
+                    (id) => id !== null,
+                ).length;
+                const isFull = filledCount >= splitCount;
+
                 container.innerHTML = "";
 
-                for (let i = 1; i <= splitCount; i++) {
-                    const row = document.createElement("div");
-                    row.className = "assign-friend-row";
+                const summary = document.createElement("div");
+                summary.className = "assign-check-summary";
+                summary.textContent = `Dipilih ${filledCount} dari ${splitCount} teman`;
+                if (isFull) summary.classList.add("is-complete");
+                container.appendChild(summary);
 
-                    const label = document.createElement("label");
-                    label.textContent = `Orang ${i}`;
-                    label.setAttribute("for", `assignFriendSelect${i}`);
+                const list = document.createElement("div");
+                list.className = "assign-check-list";
 
-                    const select = document.createElement("select");
-                    select.className = "assign-friend-select";
-                    select.id = `assignFriendSelect${i}`;
-                    select.dataset.personIndex = String(i);
+                peopleCache.forEach((person) => {
+                    const friendId = Number(person.id);
+                    const slotIndex = assignFriendSlots.indexOf(friendId);
+                    const isChecked = slotIndex !== -1;
 
-                    const defaultOption = document.createElement("option");
-                    defaultOption.value = "";
-                    defaultOption.textContent = "-- Pilih teman --";
-                    select.appendChild(defaultOption);
+                    const item = document.createElement("label");
+                    item.className = "assign-check-item";
+                    if (isChecked) item.classList.add("is-checked");
+                    if (!isChecked && isFull) item.classList.add("is-disabled");
 
-                    peopleCache.forEach((person) => {
-                        const option = document.createElement("option");
-                        option.value = String(person.id);
-                        option.textContent = person.nama;
-                        select.appendChild(option);
-                    });
-
-                    const existingSelection = selectedSplitPeople.find(
-                        (person) => person.personIndex === i,
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.checked = isChecked;
+                    checkbox.disabled = !isChecked && isFull;
+                    checkbox.addEventListener("change", () =>
+                        toggleAssignFriend(friendId, checkbox.checked),
                     );
-                    if (existingSelection && existingSelection.friendId) {
-                        select.value = String(existingSelection.friendId);
+
+                    const name = document.createElement("span");
+                    name.className = "assign-check-name";
+                    name.textContent = person.nama;
+
+                    item.appendChild(checkbox);
+                    item.appendChild(name);
+
+                    if (isChecked) {
+                        const badge = document.createElement("span");
+                        badge.className = "assign-check-badge";
+                        badge.textContent = `Orang ${slotIndex + 1}`;
+                        item.appendChild(badge);
                     }
 
-                    row.appendChild(label);
-                    row.appendChild(select);
-                    container.appendChild(row);
+                    list.appendChild(item);
+                });
+
+                container.appendChild(list);
+            }
+
+            function toggleAssignFriend(friendId, checked) {
+                const currentSlot = assignFriendSlots.indexOf(friendId);
+                if (checked && currentSlot === -1) {
+                    const emptySlot = assignFriendSlots.indexOf(null);
+                    if (emptySlot !== -1) {
+                        assignFriendSlots[emptySlot] = friendId;
+                    }
+                } else if (!checked && currentSlot !== -1) {
+                    assignFriendSlots[currentSlot] = null;
                 }
+                paintAssignFriendsChecklist();
             }
 
             function applySelectedFriendsFromModal() {
                 const splitCount =
                     parseInt(document.getElementById("splitCount").value) || 1;
-                selectedSplitPeople = [];
-                const selectedFriendIds = [];
-                for (let i = 1; i <= splitCount; i++) {
-                    const select = document.getElementById(
-                        `assignFriendSelect${i}`,
-                    );
-                    const selectedId = select ? select.value : "";
-                    if (selectedId) {
-                        selectedFriendIds.push(selectedId);
-                    }
-                    const selectedPerson = peopleCache.find(
-                        (person) => String(person.id) === selectedId,
-                    );
-                    selectedSplitPeople.push({
-                        personIndex: i,
-                        friendId: selectedId ? Number(selectedId) : null,
-                        name: selectedPerson
-                            ? selectedPerson.nama
-                            : `Orang ${i}`,
-                        noRekening: selectedPerson
-                            ? selectedPerson.no_rekening || "-"
-                            : "-",
-                    });
-                }
-
-                const uniqueFriendIds = [...new Set(selectedFriendIds)];
-                if (uniqueFriendIds.length !== selectedFriendIds.length) {
+                const filledCount = assignFriendSlots.filter(
+                    (id) => id !== null,
+                ).length;
+                if (
+                    assignFriendSlots.length !== splitCount ||
+                    filledCount !== splitCount
+                ) {
                     openWarningModal(
-                        "Pilihan Teman Duplikat",
-                        "Teman per orang tidak boleh sama. Pilih teman yang berbeda untuk setiap orang.",
+                        "Pilihan Teman Belum Lengkap",
+                        `Centang ${splitCount} teman sesuai jumlah orang (baru ${filledCount} dipilih).`,
                     );
                     return;
                 }
+
+                selectedSplitPeople = assignFriendSlots.map((friendId, i) => {
+                    const selectedPerson = peopleCache.find(
+                        (person) => Number(person.id) === friendId,
+                    );
+                    return {
+                        personIndex: i + 1,
+                        friendId,
+                        name: selectedPerson
+                            ? selectedPerson.nama
+                            : `Orang ${i + 1}`,
+                        noRekening: selectedPerson
+                            ? selectedPerson.no_rekening || "-"
+                            : "-",
+                    };
+                });
 
                 isSplitConfigurationSaved = true;
                 renderTransferAccountSelect();
@@ -7789,28 +7899,34 @@
 
                 container.innerHTML = ocrParsedItems
                     .map((item, idx) => {
-                        let personChecklistHtml = "";
-                        if (splitCount > 1) {
-                            const personChecks = [];
+                        const splitSelect =
+                            splitCount > 1
+                                ? `<div class="ocr-split-row">
+                                <label class="ocr-split-label">Dibagi Ke:</label>
+                                <select class="ocr-split-select" onchange="setOcrItemSplitMode(${idx}, this.value)">
+                                    <option value="all" ${item.splitMode === "all" ? "selected" : ""}>Semua Orang</option>
+                                    <option value="custom" ${item.splitMode === "custom" ? "selected" : ""}>Dibagi per Orang</option>
+                                </select>
+                            </div>`
+                                : "";
+
+                        let customSplitHtml = "";
+                        if (splitCount > 1 && item.splitMode === "custom") {
+                            const personChips = [];
                             for (let p = 1; p <= splitCount; p++) {
-                                const checked =
-                                    item.splitMode !== "custom" ||
-                                    item.sharedWith.includes(p)
-                                        ? "checked"
-                                        : "";
-                                const checkId = `ocrPerson_${idx}_${p}`;
-                                personChecks.push(
-                                    `<label class="ocr-person-check" for="${checkId}">
-                                        <input type="checkbox" id="${checkId}" ${checked} onchange="toggleOcrItemPerson(${idx}, ${p}, this.checked)">
-                                        <span>${escapeHtml(getPersonDisplayName(p))}</span>
+                                const personName = getPersonDisplayName(p);
+                                const checked = item.sharedWith.includes(p)
+                                    ? "checked"
+                                    : "";
+                                const chipId = `ocrChip_${idx}_${p}`;
+                                personChips.push(
+                                    `<label class="ocr-chip" for="${chipId}">
+                                        <input type="checkbox" id="${chipId}" ${checked} onchange="toggleOcrItemPerson(${idx}, ${p}, this.checked)">
+                                        <span class="ocr-chip-text">${escapeHtml(personName)}</span>
                                     </label>`,
                                 );
                             }
-                            personChecklistHtml = `
-                                <div class="ocr-person-checklist">
-                                    <span class="ocr-person-checklist-label">Dibagi ke:</span>
-                                    <div class="ocr-person-checklist-items">${personChecks.join("")}</div>
-                                </div>`;
+                            customSplitHtml = `<div class="ocr-custom-split-wrap">${personChips.join("")}</div>`;
                         }
 
                         return `
@@ -7820,7 +7936,8 @@
                             <label for="ocrItem_${idx}">${escapeHtml(item.name)}</label>
                             <span class="ocr-price">${formatNumber(item.price)} x${item.quantity}</span>
                         </div>
-                        ${personChecklistHtml}
+                        ${splitSelect}
+                        ${customSplitHtml}
                     </div>
                 `;
                     })
@@ -7936,33 +8053,26 @@
                 }
             }
 
-            // Semua orang tercentang = "all"; sebagian = "custom" dengan daftar sharedWith.
-            function toggleOcrItemPerson(index, personNumber, checked) {
-                const item = ocrParsedItems[index];
-                if (!item) return;
-                const splitCount =
-                    parseInt(
-                        document.getElementById("splitCount")?.value,
-                        10,
-                    ) || 1;
-
-                const selected = new Set(
-                    item.splitMode === "custom"
-                        ? item.sharedWith
-                        : Array.from({ length: splitCount }, (_, i) => i + 1),
-                );
-                if (checked) {
-                    selected.add(personNumber);
-                } else {
-                    selected.delete(personNumber);
+            function setOcrItemSplitMode(index, mode) {
+                if (ocrParsedItems[index]) {
+                    ocrParsedItems[index].splitMode = mode;
+                    if (mode === "all") {
+                        ocrParsedItems[index].sharedWith = [];
+                    }
+                    renderOcrResults();
                 }
+            }
 
-                if (selected.size === splitCount) {
-                    item.splitMode = "all";
-                    item.sharedWith = [];
+            function toggleOcrItemPerson(index, personNumber, checked) {
+                if (!ocrParsedItems[index]) return;
+                const shared = ocrParsedItems[index].sharedWith;
+                if (checked) {
+                    if (!shared.includes(personNumber)) {
+                        shared.push(personNumber);
+                    }
                 } else {
-                    item.splitMode = "custom";
-                    item.sharedWith = [...selected].sort((a, b) => a - b);
+                    const idx = shared.indexOf(personNumber);
+                    if (idx !== -1) shared.splice(idx, 1);
                 }
             }
 
