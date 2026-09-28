@@ -1222,6 +1222,23 @@
                 color: #1b5e20;
             }
 
+            .person-bill-row {
+                align-items: center;
+                gap: 12px;
+            }
+
+            .person-bill-row > span:last-child {
+                white-space: nowrap;
+            }
+
+            .person-bill-breakdown {
+                display: block;
+                margin-top: 2px;
+                font-size: 12px;
+                font-weight: 500;
+                color: #475569;
+            }
+
             .person-bill-row:last-child {
                 border-bottom: none;
             }
@@ -2922,9 +2939,8 @@
                     </div>
                     <small class="tax-calculation-help">
                         Isi tarif pajak langsung, atau gunakan nominal dan dasar
-                        opsional untuk menghitungnya otomatis. Dasar efektif
-                        otomatis mencakup nominal pajak yang sudah ditambahkan
-                        sebelumnya.
+                        opsional untuk menghitungnya otomatis. Setiap pajak
+                        dihitung dari subtotal item, bukan dari pajak lain.
                     </small>
                 </div>
 
@@ -4232,6 +4248,30 @@
                     .trim();
             }
 
+            // Bulatkan ke rupiah tanpa mengubah jumlahnya (largest remainder),
+            // supaya total per orang tetap pas dengan grand total.
+            function roundPreservingSum(values) {
+                const target = Math.round(
+                    values.reduce((sum, value) => sum + value, 0),
+                );
+                const floored = values.map((value) => Math.floor(value));
+                let remainder =
+                    target - floored.reduce((sum, value) => sum + value, 0);
+                values
+                    .map((value, index) => ({
+                        index,
+                        fraction: value - Math.floor(value),
+                    }))
+                    .sort((a, b) => b.fraction - a.fraction)
+                    .forEach(({ index }) => {
+                        if (remainder > 0) {
+                            floored[index] += 1;
+                            remainder -= 1;
+                        }
+                    });
+                return floored;
+            }
+
             // Format input as Rupiah (with thousand separator using dot)
             function formatRupiah(input) {
                 // Remove all non-digit characters except comma and dot
@@ -4315,16 +4355,10 @@
                 const baseBeforeCurrentTax = parseFormattedNumber(
                     totalItemInput.value,
                 );
-                const effectiveTaxBase = getEffectiveTaxBase(
-                    baseBeforeCurrentTax,
-                );
                 // Only auto-fill when both optional helper values are present.
-                if (
-                    nominalTax > 0 &&
-                    baseBeforeCurrentTax > 0 &&
-                    effectiveTaxBase > 0
-                ) {
-                    const exactRate = (nominalTax / effectiveTaxBase) * 100;
+                if (nominalTax > 0 && baseBeforeCurrentTax > 0) {
+                    const exactRate =
+                        (nominalTax / baseBeforeCurrentTax) * 100;
                     rateInput.value = formatPercentageValue(exactRate);
                 }
             }
@@ -4355,46 +4389,6 @@
                     : getRegularItemsSubtotal();
             }
 
-            // Return a stored tax nominal, with a rate/base fallback for older rows.
-            function getTaxNominal(taxItem) {
-                const storedNominal = Number(taxItem?.taxNominal);
-                if (Number.isFinite(storedNominal) && storedNominal > 0) {
-                    return storedNominal;
-                }
-
-                const storedEffectiveBase = Number(
-                    taxItem?.effectiveTaxBase,
-                );
-                const taxBase =
-                    Number.isFinite(storedEffectiveBase) &&
-                    storedEffectiveBase > 0
-                        ? storedEffectiveBase
-                        : Number(taxItem?.taxBase) || 0;
-                const taxRate = getTaxRate(taxItem);
-                return taxBase > 0 && taxRate > 0
-                    ? taxBase * (taxRate / 100)
-                    : 0;
-            }
-
-            // Sum tax nominals already added before the current tax.
-            function getPriorTaxNominalTotal() {
-                return items
-                    .filter((item) => item.isTax)
-                    .reduce(
-                        (total, taxItem) => total + getTaxNominal(taxItem),
-                        0,
-                    );
-            }
-
-            // The current input is before this tax; prior tax nominals are added
-            // to get the effective denominator used for the rate.
-            function getEffectiveTaxBase(baseBeforeCurrentTax) {
-                return (
-                    (Number(baseBeforeCurrentTax) || 0) +
-                    getPriorTaxNominalTotal()
-                );
-            }
-
             function getDiscountAmount(regularSubtotal) {
                 const nominal =
                     parseFormattedNumber(
@@ -4411,8 +4405,8 @@
                 return percent > 0 ? regularSubtotal * (percent / 100) : 0;
             }
 
-            // Calculate each tax from every regular item, in entry order.
-            // Taxes apply to the item price after its proportional discount share.
+            // Setiap pajak dihitung dari harga item (setelah porsi diskonnya),
+            // tidak bertingkat dari pajak sebelumnya.
             function calculateTaxBreakdown() {
                 const taxItems = items.filter((item) => item.isTax);
                 const taxAmounts = taxItems.map(() => 0);
@@ -4425,14 +4419,13 @@
 
                 items.filter((item) => !item.isTax).forEach((item) => {
                     const itemSubtotal = Number(item.subtotal) || 0;
-                    let taxBase = itemSubtotal * (1 - discountRatio);
+                    const taxBase = itemSubtotal * (1 - discountRatio);
                     let itemTaxTotal = 0;
 
                     taxItems.forEach((taxItem, taxIndex) => {
                         const taxAmount = taxBase * (getTaxRate(taxItem) / 100);
                         taxAmounts[taxIndex] += taxAmount;
                         itemTaxTotal += taxAmount;
-                        taxBase += taxAmount;
                     });
 
                     itemTaxAmounts.set(item.id, itemTaxTotal);
@@ -4607,11 +4600,7 @@
                 let effectiveTaxBase = 0;
                 let storedTaxNominal = 0;
                 if (isTax) {
-                    const taxBaseForMetadata =
-                        getTaxBaseForMetadata(taxBase);
-                    effectiveTaxBase = getEffectiveTaxBase(
-                        taxBaseForMetadata,
-                    );
+                    effectiveTaxBase = getTaxBaseForMetadata(taxBase);
                     storedTaxNominal =
                         taxNominal > 0
                             ? taxNominal
@@ -4852,9 +4841,8 @@
                     0,
                 );
 
-                // Discount is taken off each person's share first, then taxes
-                // apply to the discounted base. Each next tax uses the previous
-                // tax-inclusive base (Service then PB1).
+                // Diskon dipotong dulu dari porsi tiap orang, lalu setiap pajak
+                // dihitung dari dasar yang sama (tidak bertingkat).
                 const discountAmount = getDiscountAmount(allItemsSubtotal);
                 const personTaxableBases = personItemSubtotals.map(
                     (subtotal) =>
@@ -4865,9 +4853,7 @@
                 taxItems.forEach((taxItem) => {
                     const taxRate = getTaxRate(taxItem) / 100;
                     for (let i = 0; i < splitCount; i++) {
-                        const taxBase =
-                            personTaxableBases[i] + personTaxTotals[i];
-                        personTaxTotals[i] += taxBase * taxRate;
+                        personTaxTotals[i] += personTaxableBases[i] * taxRate;
                     }
                 });
 
@@ -4921,12 +4907,24 @@
                 personBillsHtml +=
                     '<h3 class="person-bills-title">Tagihan per Orang:</h3>';
 
+                const roundedTotals = roundPreservingSum(
+                    personTotals.map((person) => person.total),
+                );
+                const roundedTaxes = roundPreservingSum(
+                    personTotals.map((person) => person.tax),
+                );
+
                 for (let i = 0; i < splitCount; i++) {
-                    const personName = getPersonDisplayName(i + 1);
+                    const personName = escapeHtml(getPersonDisplayName(i + 1));
+                    const tax = roundedTaxes[i];
+                    const itemsAfterDiscount = roundedTotals[i] - tax;
                     personBillsHtml += `
                     <div class="person-bill-row">
-                        <span>${personName}:</span>
-                        <span>Rp ${personTotals[i].total.toLocaleString("id-ID")}</span>
+                        <span>
+                            ${personName}:
+                            <small class="person-bill-breakdown">Item ${formatNumber(itemsAfterDiscount)} + Pajak ${formatNumber(tax)}</small>
+                        </span>
+                        <span>${formatNumber(roundedTotals[i])}</span>
                     </div>
                     `;
                 }
