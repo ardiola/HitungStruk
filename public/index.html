@@ -3566,6 +3566,7 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
         <script>
             // Array to store items
             let items = [];
@@ -5508,7 +5509,7 @@
             // iOS membatasi canvas ~16.7 juta piksel; melebihinya menghasilkan gambar kosong.
             const MAX_CANVAS_PIXELS = 16000000;
 
-            async function renderStrukBlob() {
+            async function renderStrukCanvas() {
                 if (typeof window.html2canvas !== "function") {
                     throw new Error("Fitur simpan gambar belum tersedia.");
                 }
@@ -5540,38 +5541,86 @@
                         Math.sqrt(MAX_CANVAS_PIXELS / area),
                     );
 
-                    const canvas = await window.html2canvas(captureTarget, {
+                    return await window.html2canvas(captureTarget, {
                         scale,
                         useCORS: true,
                         backgroundColor: "#ffffff",
                     });
-                    const blob = await new Promise((resolve) =>
-                        canvas.toBlob(resolve, "image/jpeg", 0.95),
-                    );
-                    if (!blob) {
-                        throw new Error("Gambar gagal dibuat.");
-                    }
-                    return blob;
                 } finally {
                     captureWrapper.remove();
                 }
             }
 
-            function showStrukImagePreview(file) {
+            function canvasToJpegBlob(canvas) {
+                return new Promise((resolve, reject) =>
+                    canvas.toBlob(
+                        (blob) =>
+                            blob
+                                ? resolve(blob)
+                                : reject(new Error("Gambar gagal dibuat.")),
+                        "image/jpeg",
+                        0.95,
+                    ),
+                );
+            }
+
+            // A4 berhalaman banyak: gambar struk dipotong per tinggi halaman.
+            function canvasToPdfBlob(canvas) {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ unit: "mm", format: "a4" });
+                const margin = 10;
+                const pageWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+                const pageHeight =
+                    pdf.internal.pageSize.getHeight() - margin * 2;
+                const imgHeight = (canvas.height * pageWidth) / canvas.width;
+                const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+                let offset = 0;
+                while (offset < imgHeight) {
+                    if (offset > 0) pdf.addPage();
+                    pdf.addImage(
+                        imgData,
+                        "JPEG",
+                        margin,
+                        margin - offset,
+                        pageWidth,
+                        imgHeight,
+                    );
+                    // Tutup bagian gambar yang meluber ke margin atas/bawah.
+                    pdf.setFillColor(255, 255, 255);
+                    pdf.rect(0, 0, pageWidth + margin * 2, margin, "F");
+                    pdf.rect(
+                        0,
+                        margin + pageHeight,
+                        pageWidth + margin * 2,
+                        margin,
+                        "F",
+                    );
+                    offset += pageHeight;
+                }
+                return pdf.output("blob");
+            }
+
+            function showShareFallback(file) {
+                const isImage = file.type.startsWith("image/");
                 const url = URL.createObjectURL(file);
                 const overlay = document.createElement("div");
                 overlay.style.cssText =
                     "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;padding:16px;gap:12px;overflow:auto;";
                 overlay.innerHTML = `
                     <p style="color:#fff;margin:0;text-align:center;font-size:14px;">
-                        Tekan lama gambar lalu pilih <b>Simpan ke Foto</b>, atau ketuk Bagikan untuk menyimpan/mencetak.
+                        ${
+                            isImage
+                                ? "Tekan lama gambar lalu pilih <b>Simpan ke Foto</b>, atau ketuk Bagikan untuk menyimpan."
+                                : "PDF struk siap. Ketuk <b>Bagikan / Cetak</b>, lalu pilih <b>Cetak</b> atau <b>Simpan ke File</b>."
+                        }
                     </p>
-                    <img alt="Struk" style="max-width:100%;background:#fff;">
+                    ${isImage ? '<img alt="Struk" style="max-width:100%;background:#fff;">' : ""}
                     <div style="display:flex;gap:8px;">
                         <button type="button" data-act="share" style="padding:10px 16px;">Bagikan / Cetak</button>
                         <button type="button" data-act="close" style="padding:10px 16px;">Tutup</button>
                     </div>`;
-                overlay.querySelector("img").src = url;
+                if (isImage) overlay.querySelector("img").src = url;
                 const close = () => {
                     overlay.remove();
                     URL.revokeObjectURL(url);
@@ -5584,6 +5633,15 @@
                     shareBtn.addEventListener("click", () => {
                         navigator.share({ files: [file] }).catch(() => {});
                     });
+                } else if (!isImage) {
+                    const openLink = document.createElement("a");
+                    openLink.href = url;
+                    openLink.target = "_blank";
+                    openLink.rel = "noopener";
+                    openLink.textContent = "Buka PDF";
+                    openLink.style.cssText =
+                        "padding:10px 16px;background:#fff;color:#000;text-decoration:none;";
+                    shareBtn.replaceWith(openLink);
                 } else {
                     shareBtn.remove();
                 }
@@ -5597,20 +5655,24 @@
             async function shareOrDownloadStruk(file) {
                 const canShareFile =
                     navigator.canShare && navigator.canShare({ files: [file] });
+                // Share sheet Android tidak punya opsi Cetak; PDF lebih berguna diunduh
+                // lalu dibuka di penampil PDF.
+                const isAndroidPdf =
+                    file.type === "application/pdf" && !isIosDevice();
 
-                if (canShareFile && isMobileDevice()) {
+                if (canShareFile && isMobileDevice() && !isAndroidPdf) {
                     try {
                         await navigator.share({ files: [file] });
                     } catch (err) {
                         if (err.name === "AbortError") return;
                         // Aktivasi dari tap user bisa kedaluwarsa selama render; minta tap ulang.
-                        showStrukImagePreview(file);
+                        showShareFallback(file);
                     }
                     return;
                 }
 
                 if (isIosDevice()) {
-                    showStrukImagePreview(file);
+                    showShareFallback(file);
                     return;
                 }
 
@@ -5622,14 +5684,20 @@
                 link.click();
                 link.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
-                openFriendSuccessModal("Gambar struk (JPEG) berhasil diunduh.");
+                openFriendSuccessModal(
+                    file.type === "application/pdf"
+                        ? "PDF struk berhasil diunduh. Buka file-nya untuk mencetak."
+                        : "Gambar struk (JPEG) berhasil diunduh.",
+                );
             }
 
             async function exportStrukAsImage() {
                 let file;
                 try {
                     showLoading("Membuat gambar...");
-                    const blob = await renderStrukBlob();
+                    const blob = await canvasToJpegBlob(
+                        await renderStrukCanvas(),
+                    );
                     file = new File([blob], `struk-${Date.now()}.jpeg`, {
                         type: "image/jpeg",
                     });
@@ -5637,6 +5705,29 @@
                     openWarningModal(
                         "Gagal Membuat Gambar",
                         "Gagal membuat gambar: " + err.message,
+                    );
+                    return;
+                } finally {
+                    hideLoading();
+                }
+                await shareOrDownloadStruk(file);
+            }
+
+            async function exportStrukAsPdf() {
+                let file;
+                try {
+                    if (!window.jspdf?.jsPDF) {
+                        throw new Error("Library PDF belum termuat.");
+                    }
+                    showLoading("Membuat PDF...");
+                    const blob = canvasToPdfBlob(await renderStrukCanvas());
+                    file = new File([blob], `struk-${Date.now()}.pdf`, {
+                        type: "application/pdf",
+                    });
+                } catch (err) {
+                    openWarningModal(
+                        "Gagal Membuat PDF",
+                        "Gagal membuat PDF: " + err.message,
                     );
                     return;
                 } finally {
@@ -5677,9 +5768,10 @@
                     if (!validateTableHasItemsForOutput()) {
                         return;
                     }
-                    // window.print() tidak berfungsi di PWA iOS; share sheet iOS punya opsi Cetak.
-                    if (isIosDevice() && isStandaloneMode()) {
-                        await exportStrukAsImage();
+                    // Di HP cetak lewat PDF: window.print() tidak berfungsi di PWA iOS
+                    // dan hasilnya tidak konsisten antar browser mobile.
+                    if (isMobileDevice()) {
+                        await exportStrukAsPdf();
                         return;
                     }
                     printWithoutBrowserTitle();
