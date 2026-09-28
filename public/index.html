@@ -3010,6 +3010,7 @@
                                 document.getElementById(
                                     'discountAmountInput',
                                 ).value = '';
+                                renderTable();
                                 calculateTotal();
                             "
                             onblur="
@@ -3030,6 +3031,7 @@
                                     'discountPercent',
                                 ).value = '0';
                                 formatRupiah(this);
+                                renderTable();
                                 calculateTotal();
                             "
                         />
@@ -4165,10 +4167,8 @@
                     baseBeforeCurrentTax > 0 &&
                     effectiveTaxBase > 0
                 ) {
-                    const roundedRate = Math.round(
-                        (nominalTax / effectiveTaxBase) * 100,
-                    );
-                    rateInput.value = formatPercentageValue(roundedRate);
+                    const exactRate = (nominalTax / effectiveTaxBase) * 100;
+                    rateInput.value = formatPercentageValue(exactRate);
                 }
             }
 
@@ -4238,15 +4238,37 @@
                 );
             }
 
+            function getDiscountAmount(regularSubtotal) {
+                const nominal =
+                    parseFormattedNumber(
+                        document.getElementById("discountAmountInput")?.value ||
+                            "",
+                    ) || 0;
+                if (nominal > 0) {
+                    return Math.min(nominal, regularSubtotal);
+                }
+                const percent =
+                    parseFloat(
+                        document.getElementById("discountPercent")?.value,
+                    ) || 0;
+                return percent > 0 ? regularSubtotal * (percent / 100) : 0;
+            }
+
             // Calculate each tax from every regular item, in entry order.
+            // Taxes apply to the item price after its proportional discount share.
             function calculateTaxBreakdown() {
                 const taxItems = items.filter((item) => item.isTax);
                 const taxAmounts = taxItems.map(() => 0);
                 const itemTaxAmounts = new Map();
+                const regularSubtotal = getRegularItemsSubtotal();
+                const discountRatio =
+                    regularSubtotal > 0
+                        ? getDiscountAmount(regularSubtotal) / regularSubtotal
+                        : 0;
 
                 items.filter((item) => !item.isTax).forEach((item) => {
                     const itemSubtotal = Number(item.subtotal) || 0;
-                    let taxBase = itemSubtotal;
+                    let taxBase = itemSubtotal * (1 - discountRatio);
                     let itemTaxTotal = 0;
 
                     taxItems.forEach((taxItem, taxIndex) => {
@@ -4673,14 +4695,21 @@
                     0,
                 );
 
-                // Apply each percentage to every person's item share. The next
-                // tax uses the previous tax-inclusive base (Service then PB1).
+                // Discount is taken off each person's share first, then taxes
+                // apply to the discounted base. Each next tax uses the previous
+                // tax-inclusive base (Service then PB1).
+                const discountAmount = getDiscountAmount(allItemsSubtotal);
+                const personTaxableBases = personItemSubtotals.map(
+                    (subtotal) =>
+                        subtotal -
+                        discountAmount * (subtotal / (allItemsSubtotal || 1)),
+                );
                 const personTaxTotals = Array(splitCount).fill(0);
                 taxItems.forEach((taxItem) => {
                     const taxRate = getTaxRate(taxItem) / 100;
                     for (let i = 0; i < splitCount; i++) {
                         const taxBase =
-                            personItemSubtotals[i] + personTaxTotals[i];
+                            personTaxableBases[i] + personTaxTotals[i];
                         personTaxTotals[i] += taxBase * taxRate;
                     }
                 });
@@ -4689,51 +4718,14 @@
                     (itemsSubtotal, index) => ({
                         subtotal: itemsSubtotal,
                         tax: personTaxTotals[index],
-                        total: itemsSubtotal + personTaxTotals[index],
+                        total:
+                            personTaxableBases[index] + personTaxTotals[index],
                     }),
                 );
                 const allTaxItemsSubtotal = personTaxTotals.reduce(
                     (sum, taxAmount) => sum + taxAmount,
                     0,
                 );
-
-                // Get discount input. Tax is already calculated from item shares.
-                const discountAmountInput =
-                    parseFormattedNumber(
-                        document.getElementById("discountAmountInput").value,
-                    ) || 0;
-                const discountPercent =
-                    parseFloat(
-                        document.getElementById("discountPercent").value,
-                    ) || 0;
-
-                // Calculate discount amount
-                let discountAmount = 0;
-                if (discountAmountInput > 0) {
-                    discountAmount = discountAmountInput;
-                    // Apply fixed discount proportionally to each person's items.
-                    for (let i = 0; i < personTotals.length; i++) {
-                        const personShare =
-                            personTotals[i].subtotal / (allItemsSubtotal || 1);
-                        personTotals[i].total = Math.max(
-                            0,
-                            personTotals[i].total -
-                                discountAmount * personShare,
-                        );
-                    }
-                } else if (discountPercent > 0) {
-                    discountAmount = allItemsSubtotal * (discountPercent / 100);
-                    // Apply percentage discount proportionally to each person's items.
-                    for (let i = 0; i < personTotals.length; i++) {
-                        const personShare =
-                            personTotals[i].subtotal / (allItemsSubtotal || 1);
-                        personTotals[i].total = Math.max(
-                            0,
-                            personTotals[i].total -
-                                discountAmount * personShare,
-                        );
-                    }
-                }
 
                 // Update person bill display in table
                 updatePersonBills(personTotals, splitCount);
@@ -4748,13 +4740,7 @@
                 document.getElementById("subtotal").textContent =
                     formatNumber(allItemsSubtotal);
                 document.getElementById("discountAmount").textContent =
-                    formatNumber(
-                        discountAmountInput > 0
-                            ? discountAmountInput
-                            : discountAmountInput === 0 && discountPercent > 0
-                              ? allItemsSubtotal * (discountPercent / 100)
-                              : 0,
-                    );
+                    formatNumber(discountAmount);
                 document.getElementById("taxAmount").textContent =
                     formatNumber(allTaxItemsSubtotal);
                 document.getElementById("total").textContent =
