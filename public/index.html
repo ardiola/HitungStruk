@@ -2510,43 +2510,56 @@
                 color: #475569;
                 line-height: 1.4;
             }
-            #ocrResults .ocr-split-row {
+            #ocrResults .ocr-person-checklist {
                 display: flex;
-                flex-wrap: wrap;
+                flex-direction: column;
+                gap: 6px;
+                margin-left: 32px;
+            }
+            #ocrResults .ocr-person-checklist-label {
+                font-size: 13px;
+                font-weight: 500;
+                color: #64748b;
+            }
+            #ocrResults .ocr-person-checklist-items {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 8px;
+            }
+            #ocrResults .ocr-person-check {
+                display: flex;
                 align-items: center;
                 gap: 8px;
-                width: auto;
-                margin: 0 0 0 32px;
-                padding: 0;
-            }
-            #ocrResults .ocr-split-label {
-                width: auto;
-                margin: 0;
-                font-size: 13px;
-                white-space: nowrap;
-            }
-            #ocrResults .ocr-split-select {
-                flex: 1 1 160px;
-                width: auto;
-                max-width: 260px;
-                min-width: 0;
                 min-height: 40px;
+                padding: 6px 10px;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 10px;
+                background: #f8fafc;
+                cursor: pointer;
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+                transition:
+                    border-color 0.15s,
+                    background 0.15s;
+            }
+            #ocrResults .ocr-person-check:has(input:checked) {
+                border-color: #2563eb;
+                background: #eff6ff;
+            }
+            #ocrResults .ocr-person-check input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
                 margin: 0;
-                padding: 8px 32px 8px 14px;
-                font-size: 13px;
-                background-position: right 12px center;
+                flex-shrink: 0;
+                accent-color: #2563eb;
             }
-            #ocrResults .ocr-custom-split-wrap {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                margin: 0 0 0 32px;
-                padding: 0;
-            }
-            #ocrResults .ocr-chip-text {
-                min-height: 36px;
-                padding: 6px 14px;
-                font-size: 13px;
+            #ocrResults .ocr-person-check span {
+                min-width: 0;
+                font-size: 14px;
+                color: #1e293b;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
         </style>
         <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -7776,34 +7789,28 @@
 
                 container.innerHTML = ocrParsedItems
                     .map((item, idx) => {
-                        const splitSelect =
-                            splitCount > 1
-                                ? `<div class="ocr-split-row">
-                                <label class="ocr-split-label">Dibagi Ke:</label>
-                                <select class="ocr-split-select" onchange="setOcrItemSplitMode(${idx}, this.value)">
-                                    <option value="all" ${item.splitMode === "all" ? "selected" : ""}>Semua Orang</option>
-                                    <option value="custom" ${item.splitMode === "custom" ? "selected" : ""}>Dibagi per Orang</option>
-                                </select>
-                            </div>`
-                                : "";
-
-                        let customSplitHtml = "";
-                        if (splitCount > 1 && item.splitMode === "custom") {
-                            const personChips = [];
+                        let personChecklistHtml = "";
+                        if (splitCount > 1) {
+                            const personChecks = [];
                             for (let p = 1; p <= splitCount; p++) {
-                                const personName = getPersonDisplayName(p);
-                                const checked = item.sharedWith.includes(p)
-                                    ? "checked"
-                                    : "";
-                                const chipId = `ocrChip_${idx}_${p}`;
-                                personChips.push(
-                                    `<label class="ocr-chip" for="${chipId}">
-                                        <input type="checkbox" id="${chipId}" ${checked} onchange="toggleOcrItemPerson(${idx}, ${p}, this.checked)">
-                                        <span class="ocr-chip-text">${escapeHtml(personName)}</span>
+                                const checked =
+                                    item.splitMode !== "custom" ||
+                                    item.sharedWith.includes(p)
+                                        ? "checked"
+                                        : "";
+                                const checkId = `ocrPerson_${idx}_${p}`;
+                                personChecks.push(
+                                    `<label class="ocr-person-check" for="${checkId}">
+                                        <input type="checkbox" id="${checkId}" ${checked} onchange="toggleOcrItemPerson(${idx}, ${p}, this.checked)">
+                                        <span>${escapeHtml(getPersonDisplayName(p))}</span>
                                     </label>`,
                                 );
                             }
-                            customSplitHtml = `<div class="ocr-custom-split-wrap">${personChips.join("")}</div>`;
+                            personChecklistHtml = `
+                                <div class="ocr-person-checklist">
+                                    <span class="ocr-person-checklist-label">Dibagi ke:</span>
+                                    <div class="ocr-person-checklist-items">${personChecks.join("")}</div>
+                                </div>`;
                         }
 
                         return `
@@ -7813,8 +7820,7 @@
                             <label for="ocrItem_${idx}">${escapeHtml(item.name)}</label>
                             <span class="ocr-price">${formatNumber(item.price)} x${item.quantity}</span>
                         </div>
-                        ${splitSelect}
-                        ${customSplitHtml}
+                        ${personChecklistHtml}
                     </div>
                 `;
                     })
@@ -7930,26 +7936,33 @@
                 }
             }
 
-            function setOcrItemSplitMode(index, mode) {
-                if (ocrParsedItems[index]) {
-                    ocrParsedItems[index].splitMode = mode;
-                    if (mode === "all") {
-                        ocrParsedItems[index].sharedWith = [];
-                    }
-                    renderOcrResults();
-                }
-            }
-
+            // Semua orang tercentang = "all"; sebagian = "custom" dengan daftar sharedWith.
             function toggleOcrItemPerson(index, personNumber, checked) {
-                if (!ocrParsedItems[index]) return;
-                const shared = ocrParsedItems[index].sharedWith;
+                const item = ocrParsedItems[index];
+                if (!item) return;
+                const splitCount =
+                    parseInt(
+                        document.getElementById("splitCount")?.value,
+                        10,
+                    ) || 1;
+
+                const selected = new Set(
+                    item.splitMode === "custom"
+                        ? item.sharedWith
+                        : Array.from({ length: splitCount }, (_, i) => i + 1),
+                );
                 if (checked) {
-                    if (!shared.includes(personNumber)) {
-                        shared.push(personNumber);
-                    }
+                    selected.add(personNumber);
                 } else {
-                    const idx = shared.indexOf(personNumber);
-                    if (idx !== -1) shared.splice(idx, 1);
+                    selected.delete(personNumber);
+                }
+
+                if (selected.size === splitCount) {
+                    item.splitMode = "all";
+                    item.sharedWith = [];
+                } else {
+                    item.splitMode = "custom";
+                    item.sharedWith = [...selected].sort((a, b) => a - b);
                 }
             }
 
