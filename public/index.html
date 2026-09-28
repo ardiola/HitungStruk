@@ -2463,6 +2463,91 @@
             .scan-choice-handle {
                 display: none;
             }
+
+            /* Hasil scan: layout satu kolom yang sama untuk semua ukuran layar.
+               Baris 1 = checkbox | nama | harga, baris 2 = pilihan pembagian,
+               baris 3 = chip teman. Diberi scope #ocrResults supaya menang atas
+               aturan .ocr-* lama di media query. */
+            #ocrResults .ocr-item-row-wrap {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px 0;
+                border-bottom: 1px solid #eef2f7;
+            }
+            #ocrResults .ocr-item-row-wrap:last-child {
+                border-bottom: none;
+            }
+            #ocrResults .ocr-result-item {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 0;
+                border-bottom: none;
+            }
+            #ocrResults .ocr-result-item input[type="checkbox"] {
+                width: 22px;
+                height: 22px;
+                margin: 1px 0 0;
+                flex-shrink: 0;
+                accent-color: #2563eb;
+            }
+            #ocrResults .ocr-result-item label {
+                flex: 1 1 auto;
+                min-width: 0;
+                font-size: 15px;
+                font-weight: 500;
+                line-height: 1.4;
+                color: #1e293b;
+                overflow-wrap: anywhere;
+            }
+            #ocrResults .ocr-result-item .ocr-price {
+                flex-shrink: 0;
+                white-space: nowrap;
+                font-size: 14px;
+                font-weight: 600;
+                color: #475569;
+                line-height: 1.4;
+            }
+            #ocrResults .ocr-split-row {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+                width: auto;
+                margin: 0 0 0 32px;
+                padding: 0;
+            }
+            #ocrResults .ocr-split-label {
+                width: auto;
+                margin: 0;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+            #ocrResults .ocr-split-select {
+                flex: 1 1 160px;
+                width: auto;
+                max-width: 260px;
+                min-width: 0;
+                min-height: 40px;
+                margin: 0;
+                padding: 8px 32px 8px 14px;
+                font-size: 13px;
+                background-position: right 12px center;
+            }
+            #ocrResults .ocr-custom-split-wrap {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin: 0 0 0 32px;
+                padding: 0;
+            }
+            #ocrResults .ocr-chip-text {
+                min-height: 36px;
+                padding: 6px 14px;
+                font-size: 13px;
+            }
         </style>
         <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     </head>
@@ -7727,8 +7812,8 @@
                             <input type="checkbox" id="ocrItem_${idx}" ${item.selected ? "checked" : ""} onchange="toggleOcrItem(${idx})">
                             <label for="ocrItem_${idx}">${escapeHtml(item.name)}</label>
                             <span class="ocr-price">${formatNumber(item.price)} x${item.quantity}</span>
-                            ${splitSelect}
                         </div>
+                        ${splitSelect}
                         ${customSplitHtml}
                     </div>
                 `;
