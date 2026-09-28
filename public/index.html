@@ -5504,68 +5504,159 @@
                 }
             }
 
-            async function exportStrukAsImage() {
-                if (typeof window.html2canvas !== "function") {
-                    openWarningModal(
-                        "Fitur Belum Tersedia",
-                        "Fitur simpan gambar belum tersedia.",
-                    );
-                    return;
-                }
+            function isIosDevice() {
+                return (
+                    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === "MacIntel" &&
+                        navigator.maxTouchPoints > 1)
+                );
+            }
 
+            function isStandaloneMode() {
+                return (
+                    window.navigator.standalone === true ||
+                    window.matchMedia("(display-mode: standalone)").matches
+                );
+            }
+
+            // iOS membatasi canvas ~16.7 juta piksel; melebihinya menghasilkan gambar kosong.
+            const MAX_CANVAS_PIXELS = 16000000;
+
+            async function renderStrukBlob() {
+                if (typeof window.html2canvas !== "function") {
+                    throw new Error("Fitur simpan gambar belum tersedia.");
+                }
                 const sourceContainer = document.getElementById("appContainer");
                 if (!sourceContainer) {
-                    openWarningModal(
-                        "Area Tidak Ditemukan",
-                        "Area struk tidak ditemukan.",
-                    );
-                    return;
+                    throw new Error("Area struk tidak ditemukan.");
                 }
 
-                let captureWrapper = null;
+                const captureWrapper = document.createElement("div");
+                captureWrapper.className = "image-export-capture";
+                const captureTarget = sourceContainer.cloneNode(true);
+                captureTarget.style.display = "block";
+                captureTarget.removeAttribute("id");
+                captureWrapper.appendChild(captureTarget);
+                document.body.appendChild(captureWrapper);
+
                 try {
-                    showLoading("Membuat gambar...");
-
-                    captureWrapper = document.createElement("div");
-                    captureWrapper.className = "image-export-capture";
-
-                    const captureTarget = sourceContainer.cloneNode(true);
-                    captureTarget.style.display = "block";
-                    captureTarget.removeAttribute("id");
-                    captureWrapper.appendChild(captureTarget);
-                    document.body.appendChild(captureWrapper);
-
                     await new Promise((resolve) =>
                         requestAnimationFrame(() =>
                             requestAnimationFrame(resolve),
                         ),
                     );
 
+                    const area =
+                        Math.max(1, captureTarget.scrollWidth) *
+                        Math.max(1, captureTarget.scrollHeight);
+                    const scale = Math.min(
+                        2,
+                        Math.sqrt(MAX_CANVAS_PIXELS / area),
+                    );
+
                     const canvas = await window.html2canvas(captureTarget, {
-                        scale: 2,
+                        scale,
                         useCORS: true,
                         backgroundColor: "#ffffff",
                     });
-                    const link = document.createElement("a");
-                    link.href = canvas.toDataURL("image/jpeg", 0.95);
-                    link.download = `struk-${Date.now()}.jpeg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    openFriendSuccessModal(
-                        "Gambar struk (JPEG) berhasil diunduh.",
+                    const blob = await new Promise((resolve) =>
+                        canvas.toBlob(resolve, "image/jpeg", 0.95),
                     );
+                    if (!blob) {
+                        throw new Error("Gambar gagal dibuat.");
+                    }
+                    return blob;
+                } finally {
+                    captureWrapper.remove();
+                }
+            }
+
+            function showStrukImagePreview(file) {
+                const url = URL.createObjectURL(file);
+                const overlay = document.createElement("div");
+                overlay.style.cssText =
+                    "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;padding:16px;gap:12px;overflow:auto;";
+                overlay.innerHTML = `
+                    <p style="color:#fff;margin:0;text-align:center;font-size:14px;">
+                        Tekan lama gambar lalu pilih <b>Simpan ke Foto</b>, atau ketuk Bagikan untuk menyimpan/mencetak.
+                    </p>
+                    <img alt="Struk" style="max-width:100%;background:#fff;">
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" data-act="share" style="padding:10px 16px;">Bagikan / Cetak</button>
+                        <button type="button" data-act="close" style="padding:10px 16px;">Tutup</button>
+                    </div>`;
+                overlay.querySelector("img").src = url;
+                const close = () => {
+                    overlay.remove();
+                    URL.revokeObjectURL(url);
+                };
+                overlay
+                    .querySelector('[data-act="close"]')
+                    .addEventListener("click", close);
+                const shareBtn = overlay.querySelector('[data-act="share"]');
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    shareBtn.addEventListener("click", () => {
+                        navigator.share({ files: [file] }).catch(() => {});
+                    });
+                } else {
+                    shareBtn.remove();
+                }
+                document.body.appendChild(overlay);
+            }
+
+            function isMobileDevice() {
+                return isIosDevice() || /Android/i.test(navigator.userAgent);
+            }
+
+            async function shareOrDownloadStruk(file) {
+                const canShareFile =
+                    navigator.canShare && navigator.canShare({ files: [file] });
+
+                if (canShareFile && isMobileDevice()) {
+                    try {
+                        await navigator.share({ files: [file] });
+                    } catch (err) {
+                        if (err.name === "AbortError") return;
+                        // Aktivasi dari tap user bisa kedaluwarsa selama render; minta tap ulang.
+                        showStrukImagePreview(file);
+                    }
+                    return;
+                }
+
+                if (isIosDevice()) {
+                    showStrukImagePreview(file);
+                    return;
+                }
+
+                const url = URL.createObjectURL(file);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = file.name;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                openFriendSuccessModal("Gambar struk (JPEG) berhasil diunduh.");
+            }
+
+            async function exportStrukAsImage() {
+                let file;
+                try {
+                    showLoading("Membuat gambar...");
+                    const blob = await renderStrukBlob();
+                    file = new File([blob], `struk-${Date.now()}.jpeg`, {
+                        type: "image/jpeg",
+                    });
                 } catch (err) {
                     openWarningModal(
                         "Gagal Membuat Gambar",
                         "Gagal membuat gambar: " + err.message,
                     );
+                    return;
                 } finally {
-                    if (captureWrapper && captureWrapper.parentNode) {
-                        captureWrapper.parentNode.removeChild(captureWrapper);
-                    }
                     hideLoading();
                 }
+                await shareOrDownloadStruk(file);
             }
 
             function printWithoutBrowserTitle() {
@@ -5598,6 +5689,11 @@
                 closeMainActionConfirmModal();
                 if (action === "print") {
                     if (!validateTableHasItemsForOutput()) {
+                        return;
+                    }
+                    // window.print() tidak berfungsi di PWA iOS; share sheet iOS punya opsi Cetak.
+                    if (isIosDevice() && isStandaloneMode()) {
+                        await exportStrukAsImage();
                         return;
                     }
                     printWithoutBrowserTitle();
